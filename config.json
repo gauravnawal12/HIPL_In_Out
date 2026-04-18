@@ -1,0 +1,4 @@
+{
+  "sheetsUrl": "https://script.google.com/macros/s/AKfycbzlXcdxvAr38hAtR-hsc5cSQW6BTaPhPOekLK7-lsKeFFP_pVYufqki1KUemdLQNPG1WA/exec",
+  "_comment": "Paste your Apps Script Web App URL into sheetsUrl above. When you deploy a new Apps Script URL, update this file and push to GitHub — all users will automatically switch to the new URL within seconds of opening the app. No reinstall, no manual steps needed."
+}
