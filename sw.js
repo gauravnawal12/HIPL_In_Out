@@ -32,7 +32,7 @@
    Change this string (e.g. "helix-v2") every time you update the app.
    Old caches with different names get automatically deleted below.
 ──────────────────────────────────────────────────────────────────── */
-var CACHE_NAME = "helix-v26";
+var CACHE_NAME = "helix-v29";
 
 /* ─── FILES TO PRE-CACHE ────────────────────────────────────────────
    These files are downloaded and saved to the device on first visit.
@@ -124,8 +124,17 @@ self.addEventListener("fetch", function(event) {
      If offline, they will fail — but the app saves data locally first,
      so no data is ever lost. */
   if (url.includes("script.google.com") || url.includes("googleapis.com")) {
-    /* Just pass straight through to the network — no caching involved */
     event.respondWith(fetch(event.request));
+    return;
+  }
+
+  /* config.json — always fetch from network so URL updates reach users instantly */
+  if (url.includes("config.json")) {
+    event.respondWith(
+      fetch(event.request).catch(function() {
+        return new Response("{}", {headers:{"Content-Type":"application/json"}});
+      })
+    );
     return;
   }
 
@@ -187,6 +196,13 @@ self.addEventListener("fetch", function(event) {
       return cachedResponse || networkFetch;
     })
   );
+});
+
+/* ── Message handler: app sends SKIP_WAITING to activate new SW immediately ── */
+self.addEventListener("message", function(event) {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 console.log("[Helix SW] Service worker script loaded. Cache:", CACHE_NAME);
