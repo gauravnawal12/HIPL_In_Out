@@ -1,0 +1,2409 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════╗
+║        HELIX INDUSTRIES — MATERIAL REGISTER  v4.0                   ║
+║        "QUALITY REDEFINED" — Factory Operations App                  ║
+║                                                                      ║
+║  BRAND COLORS (extracted from official Helix Industries logo):       ║
+║    Slate Navy  : #2c3b48  — primary dark color (logo text)           ║
+║    Deep Slate  : #1e2a35  — darker shade for headers/backgrounds     ║
+║    Gold Amber  : #f7b810  — accent color (logo bracket mark)         ║
+║    Gold Dark   : #d4960a  — darker gold for hover states             ║
+║    Off-White   : #f5f0e8  — warm background (not cold grey)          ║
+║    Surface     : #ffffff  — card backgrounds                         ║
+║                                                                      ║
+║  DESIGN APPROACH (frontend-design skill applied):                    ║
+║    Aesthetic: Industrial-Refined — bold, structured, authoritative.  ║
+║    Like a premium factory instrument panel. The geometry of the      ║
+║    Helix logo bracket mark is echoed throughout: rectangular,        ║
+║    structured, confident. Gold accents are used sparingly but        ║
+║    decisively — borders, active states, focus rings, save buttons.   ║
+║                                                                      ║
+║  TYPOGRAPHY:                                                         ║
+║    Display : "Barlow Condensed" — industrial, wide, commanding       ║
+║    Body    : "DM Sans" — clean, readable, modern without being       ║
+║              boring like Inter or Roboto                             ║
+║                                                                      ║
+║  FEATURES:                                                           ║
+║    • Inward Tab  — raw materials arriving at factory                 ║
+║    • Dispatch Tab — finished goods leaving factory                   ║
+║    • Records Tab  — view / delete all past entries                   ║
+║    • Export Excel — per-person sheets + combined                     ║
+║    • Google Sheets sync — auto-sends to cloud on every save          ║
+║    • PWA-ready — installable on Android/iPhone home screen           ║
+║    • Offline-capable — service worker caches all files               ║
+║    • Mobile-first — 44px touch targets, bottom nav, stacked grids    ║
+╚══════════════════════════════════════════════════════════════════════╝
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<!-- viewport: prevents the page from zooming out on phones -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<!-- PWA meta tags: make the app feel native when installed -->
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Helix Register"/>
+<meta name="theme-color" content="#ffffff"/>
+<meta name="description" content="Helix Industries Factory Material Inward and Dispatch Register"/>
+<title>Helix Industries — Material Register</title>
+
+<!-- PWA manifest: tells browser this app is installable -->
+<link rel="manifest" href="./manifest.json"/>
+<!-- Apple home screen icon -->
+<link rel="apple-touch-icon" href="./icon-192.png"/>
+
+<!-- Google Fonts: Barlow Condensed (industrial headings) + DM Sans (body) -->
+<!-- These load from the internet; app still works if offline (falls back gracefully) -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+<!-- SheetJS: enables the Excel (.xlsx) export feature -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+<style>
+/* ════════════════════════════════════════════════════════════════
+   BRAND CSS VARIABLES
+   Define all Helix brand colors once here.
+   To update the brand — just change these values, nothing else.
+════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Helix Gold (brand accent — unchanged) ── */
+  --gold:       #f7b810;
+  --gold-dark:  #d4960a;
+  --gold-pale:  #fff8e1;
+
+  /* ── Kept as text-only variables — never used as background ── */
+  --slate:      #2c3b48;   /* dark text */
+  --slate-deep: #2c3b48;   /* alias — same dark text */
+  --slate-mid:  #4a5e6e;   /* medium text */
+
+  /* ── LIGHT THEME SURFACES — everything white / very light ── */
+  --bg:         #f4f6f8;   /* page background — clean light grey */
+  --surface:    #ffffff;   /* cards — pure white */
+  --surface2:   #f8f9fb;   /* input & row backgrounds */
+  --border:     #dde1e7;   /* borders — light grey */
+  --border-focus: var(--gold);
+
+  /* ── TEXT — dark for strong readability on white ── */
+  --text:       #1a1a1a;   /* primary body text */
+  --text-mid:   #4a5e6e;   /* secondary / helper text */
+  --text-muted: #8a96a0;   /* labels, placeholders */
+
+  /* Status */
+  --green:      #16a34a;
+  --green-pale: #dcfce7;
+  --red:        #dc2626;
+  --amber:      #d97706;
+
+  /* Typography */
+  --font-display: 'Barlow Condensed', sans-serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  /* Geometry */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  14px;
+  --radius-xl:  18px;
+
+  /* Shadows — softer on white */
+  --shadow-card: 0 1px 8px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:   0 4px 20px rgba(0,0,0,.10);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GLOBAL RESET
+   Make all elements behave consistently across browsers.
+════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent; /* removes blue flash on mobile tap */
+}
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  /* Subtle geometric dot pattern — echoes the paving tile products */
+  background-image:
+    radial-gradient(circle, rgba(0,0,0,.045) 1px, transparent 1px);
+  background-size: 24px 24px;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   ANIMATIONS
+════════════════════════════════════════════════════════════════ */
+/* Toast notification slides up from bottom */
+@keyframes toastIn   { from{opacity:0;transform:translate(-50%,16px) scale(.92)} to{opacity:1;transform:translate(-50%,0) scale(1)} }
+/* Pulsing animation for "syncing" dot */
+@keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.35} }
+/* Spinning animation inside save buttons */
+@keyframes spin      { to{transform:rotate(360deg)} }
+/* Card entrance: slides up + fades in on page load */
+@keyframes slideUp   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+/* Gold shimmer on save button after successful save */
+@keyframes shimmer   { 0%{background-position:200% center} 100%{background-position:-200% center} }
+
+/* ════════════════════════════════════════════════════════════════
+   TYPOGRAPHY SCALE
+════════════════════════════════════════════════════════════════ */
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: .3px; }
+
+/* ════════════════════════════════════════════════════════════════
+   INTERACTIVE ELEMENT BASE STYLES
+   font-size:16px on inputs prevents iOS Safari from auto-zooming
+════════════════════════════════════════════════════════════════ */
+input, select, button, textarea {
+  font-family: var(--font-body);
+  font-size: 16px;
+}
+button { cursor: pointer; transition: all .15s ease; border: none; }
+button:active { transform: scale(.96); }
+
+/* Custom scrollbar — thin & brand-colored */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+/* ════════════════════════════════════════════════════════════════
+   HEADER
+   Deep slate background with gold accent strip at bottom.
+   Sticky — stays at top when user scrolls down the form.
+════════════════════════════════════════════════════════════════ */
+#hdr {
+  background: #ffffff;
+  /* Gold bottom border — brand signature on white header */
+  border-bottom: 3px solid var(--gold);
+  color: var(--text);
+  padding: 14px 16px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,.07);
+}
+/* Centered inner wrapper — limits width on wide screens */
+.hi { max-width: 1040px; margin: 0 auto; }
+
+/* Top row of header: logo mark + title + action buttons */
+.ht {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* Logo mark: SVG recreation of the Helix bracket in miniature */
+.logo-mark {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  position: relative;
+}
+/* Header title block */
+.hd-title { line-height: 1; }
+.hd-title h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  color: var(--slate);
+}
+/* Gold tagline under the name */
+.hd-title .tagline {
+  font-size: 9px;
+  color: var(--gold-dark);
+  letter-spacing: 2.5px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  display: block;
+  margin-top: 2px;
+}
+
+/* Right-side header buttons */
+.hr { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Sync status pill */
+.spill {
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: 20px;
+  color: var(--text-mid);
+}
+.sdot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+  background: var(--text-muted);
+}
+
+/* Excel export button — gold, branded */
+.expb {
+  background: var(--gold);
+  color: #1a1a1a;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 12px;
+  font-family: var(--font-display);
+  letter-spacing: .3px;
+  min-height: 36px;
+  border: none;
+}
+.expb:hover { background: var(--gold-dark); }
+
+/* Google Sheets config button — ghost style */
+.cfgb {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 12px;
+  min-height: 36px;
+}
+.cfgb:hover { background: #fff; border-color: var(--gold); color: var(--slate); }
+
+/* ════════════════════════════════════════════════════════════════
+   TAB NAVIGATION (desktop — hidden on mobile, bottom nav used instead)
+════════════════════════════════════════════════════════════════ */
+#tabs {
+  display: flex;
+  gap: 3px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#tabs::-webkit-scrollbar { display: none; }
+
+.tb {
+  padding: 10px 18px;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .4px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #eef0f2;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-height: 46px;
+  transition: all .15s;
+  /* Bottom border indicator — none when inactive */
+  border-bottom: 3px solid transparent;
+  /* Offset 3px to sit above the header's gold border */
+  margin-bottom: -3px;
+}
+/* Active tab: white bg, visually lifts above header */
+.tb.on {
+  background: #ffffff;
+  color: var(--slate);
+  border-bottom: 3px solid #ffffff;
+  box-shadow: 0 -2px 6px rgba(0,0,0,.04);
+}
+/* Count badge inside each tab */
+.tc {
+  border-radius: 20px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-muted);
+  background: #dde1e7;
+  font-family: var(--font-body);
+}
+.tb.on .tc { background: var(--c, var(--gold)); color: #1a1a1a; }
+
+/* ════════════════════════════════════════════════════════════════
+   MAIN CONTENT WRAPPER
+════════════════════════════════════════════════════════════════ */
+#wrap { max-width: 1040px; margin: 0 auto; padding: 20px 14px 90px; }
+
+/* ════════════════════════════════════════════════════════════════
+   CARDS
+   White panels with subtle shadow.
+   Left border uses --ac CSS variable set per-card.
+════════════════════════════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  margin-bottom: 16px;
+  /* Entrance animation — cards slide up on load */
+  animation: slideUp .35s ease both;
+}
+
+/* Card header strip */
+.ch {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid var(--border);
+  /* Left accent bar — color set via --ac on each card */
+  border-left: 4px solid var(--ac, var(--gold));
+  background: linear-gradient(to right, rgba(247,184,16,.04), transparent 180px);
+}
+.ch h2 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--slate);
+  letter-spacing: .3px;
+}
+.ch p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+/* Card body */
+.cb { padding: 18px 20px 20px; }
+
+/* ════════════════════════════════════════════════════════════════
+   FORM FIELD LABELS
+════════════════════════════════════════════════════════════════ */
+label.lbl {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  font-family: var(--font-display);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INPUT & SELECT FIELDS
+   font-size:16px is critical — prevents iOS Safari from zooming in
+   when the user taps an input. DO NOT reduce below 16px.
+════════════════════════════════════════════════════════════════ */
+input.inp, select.inp {
+  width: 100%;
+  padding: 10px 13px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color .15s, box-shadow .15s;
+  min-height: 46px; /* Apple's recommended minimum touch target */
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* Gold focus ring — branded, unmistakable */
+input.inp:focus, select.inp:focus {
+  outline: none;
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px rgba(247,184,16,.2) !important;
+}
+/* Custom dropdown arrow in brand slate color */
+select.inp {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%232c3b48' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+/* Disabled selects (e.g. Design before Type is chosen) */
+select.inp:disabled {
+  background-color: var(--surface2);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  opacity: .7;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   GRID LAYOUTS FOR FORM ROWS
+   g3 = 3-column, g4 = 4-column, g6 = 6-column
+   All collapse to 2-col on tablet, 1-col on phone
+════════════════════════════════════════════════════════════════ */
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.g4 { display: grid; grid-template-columns: 1.3fr 1fr 1.3fr 1fr; gap: 12px; }
+.g6 { display: grid; grid-template-columns: 1.4fr 1.4fr .9fr 1fr 1fr .8fr; gap: 10px; }
+.sp3 { grid-column: span 3; }
+
+/* Tablet: collapse to 2 columns */
+@media (max-width: 700px) {
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g3 .sp3 { grid-column: span 2; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .g6 { grid-template-columns: 1fr 1fr; }
+}
+/* Phone: collapse to 1 column */
+@media (max-width: 430px) {
+  .g3, .g4, .g6 { grid-template-columns: 1fr; }
+  .g3 .sp3 { grid-column: span 1; }
+}
+
+/* Spacing utilities */
+.mt6  { margin-top: 6px; }
+.mt7  { margin-top: 7px; }
+.mt12 { margin-top: 12px; }
+
+/* ════════════════════════════════════════════════════════════════
+   MATERIAL ROW BOXES
+   Each material in a form gets its own grey inset box.
+   Styled with a subtle left gold strip.
+════════════════════════════════════════════════════════════════ */
+.mr {
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-left: 3px solid var(--gold); /* gold left strip — brand accent */
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-bottom: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.mr:hover { box-shadow: 0 2px 12px rgba(247,184,16,.1); }
+
+/* Row header: "MATERIAL 1" label + remove button */
+.mrh {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.mrl {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--gold-dark);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* Remove (✕) button — only shown when multiple rows exist */
+.rmb {
+  background: none;
+  border: none;
+  color: var(--red);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 6px;
+  min-width: 34px;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: background .12s;
+}
+.rmb:hover { background: rgba(220,38,38,.08); }
+
+/* ════════════════════════════════════════════════════════════════
+   BUTTONS
+════════════════════════════════════════════════════════════════ */
+
+/* Dashed "Add Material" button */
+.addb {
+  background: rgba(247,184,16,.06);
+  border: 1.5px dashed var(--gold-dark);
+  color: var(--text-mid);
+  padding: 8px 16px;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 13px;
+  font-family: var(--font-display);
+  letter-spacing: .3px;
+  min-height: 42px;
+  transition: all .15s;
+}
+.addb:hover {
+  background: rgba(247,184,16,.12);
+  border-color: var(--gold);
+  color: var(--slate);
+}
+
+/* Full-width Save button at the bottom of each form */
+.savb {
+  width: 100%;
+  margin-top: 12px;
+  padding: 15px;
+  color: #1a1a1a;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  /* Gold gradient — the most important action on each form */
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  box-shadow: 0 3px 12px rgba(247,184,16,.35);
+  transition: all .18s;
+}
+.savb:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(247,184,16,.4);
+}
+.savb:disabled { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Green save button variant (inward) */
+.savb-green {
+  background: linear-gradient(135deg, #22c55e 0%, #15803d 100%);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(22,163,74,.3);
+}
+.savb-green:hover { box-shadow: 0 6px 20px rgba(22,163,74,.38); }
+
+/* ════════════════════════════════════════════════════════════════
+   RECORDS TAB — Toggle bar and table
+════════════════════════════════════════════════════════════════ */
+.sbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tgrp { display: flex; gap: 6px; }
+
+/* Toggle button: "Inward" / "Dispatch" inside Records panel */
+.tog {
+  padding: 9px 18px;
+  border: 2px solid transparent;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .3px;
+  border-radius: var(--radius-md);
+  min-height: 42px;
+  transition: all .15s;
+}
+.tog.on {
+  background: var(--gold);
+  color: #1a1a1a;
+  border-color: var(--gold);
+  box-shadow: 0 2px 8px rgba(247,184,16,.3);
+}
+.tog.off {
+  background: var(--surface);
+  color: var(--text-mid);
+  border-color: var(--border);
+}
+.tog.off:hover { border-color: var(--gold-dark); color: var(--slate); }
+
+/* Data table */
+.tw { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; min-width: 580px; }
+thead tr { background: var(--gold); }
+th {
+  padding: 10px 12px;
+  text-align: left;
+  color: #1a1a1a;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: .8px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+/* Darker gold on first column for definition */
+th:first-child { border-left: 3px solid var(--gold-dark); }
+td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13px;
+  white-space: nowrap;
+}
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: var(--surface2); }
+tr:hover td { background: rgba(247,184,16,.04); }
+
+/* Qty values colored by type */
+.qi { font-weight: 700; color: var(--green); }
+.qo { font-weight: 700; color: var(--gold-dark); }
+.da { color: var(--text-muted); }
+
+/* Delete row button */
+.delb {
+  background: none;
+  border: none;
+  color: #fca5a5;
+  font-size: 15px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  min-height: 34px;
+  transition: background .12s;
+}
+.delb:hover { background: rgba(220,38,38,.08); color: var(--red); }
+
+/* Material type badges */
+.bdg { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; white-space: nowrap; font-family: var(--font-display); letter-spacing: .3px; }
+.bm  { background: #dbeafe; color: #1e40af; }   /* Machine Made — blue */
+.br  { background: var(--gold-pale); color: #92400e; } /* Rubber Moulded — gold */
+.bo  { background: var(--surface2); color: var(--text-mid); } /* Other */
+
+/* Empty state */
+.emp  { padding: 48px 20px; text-align: center; color: var(--text-muted); }
+.empi { font-size: 40px; margin-bottom: 10px; }
+.emp p { font-family: var(--font-display); font-size: 15px; font-weight: 700; }
+
+/* ════════════════════════════════════════════════════════════════
+   GOOGLE SHEETS SETUP PANEL
+   Yellow-tinted instructional banner (hidden by default)
+════════════════════════════════════════════════════════════════ */
+#sup {
+  background: #fffbeb;
+  border: 1.5px solid var(--gold);
+  border-left: 4px solid var(--gold-dark);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  display: none;
+}
+#sup h3 { color: #92400e; font-family: var(--font-display); font-size: 15px; margin-bottom: 10px; font-weight: 800; }
+.ssl    { padding-left: 18px; margin: 8px 0 12px; }
+.ssl li { color: #78350f; font-size: 13px; margin-bottom: 5px; line-height: 1.6; }
+.ssl li b { color: #92400e; }
+/* Code box — light background, readable dark text */
+#codebox {
+  background: #eef2f6;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  font-family: 'Courier New', monospace;
+  line-height: 1.7;
+  color: #2c3b48;
+  white-space: pre-wrap;
+  overflow-x: auto;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.srow { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+.srow input {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 13px;
+  border: 1.5px solid var(--gold);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-family: var(--font-body);
+  min-height: 44px;
+  background: #fff;
+  color: var(--text);
+}
+.srow input:focus { outline: none; border-color: var(--gold-dark); box-shadow: 0 0 0 3px rgba(247,184,16,.2); }
+.srow button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+  color: #fff;
+  min-height: 44px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   TOAST NOTIFICATION
+   Small popup at the bottom of the screen.
+════════════════════════════════════════════════════════════════ */
+#toast {
+  position: fixed;
+  bottom: 80px; /* sits above the mobile bottom nav */
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  padding: 11px 24px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 9999;
+  white-space: nowrap;
+  animation: toastIn .28s cubic-bezier(.34,1.56,.64,1);
+  display: none;
+  max-width: calc(100vw - 32px);
+  text-align: center;
+}
+
+/* Loading spinner inside save buttons */
+.spin {
+  width: 17px; height: 17px;
+  border: 2px solid rgba(0,0,0,.12);
+  border-top-color: #1a1a1a;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+.spin-w {
+  width: 17px; height: 17px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   MOBILE BOTTOM NAVIGATION BAR
+   Only visible on screens 700px and narrower (phones & small tablets).
+   Replaces the header tab buttons on mobile.
+════════════════════════════════════════════════════════════════ */
+#botnav {
+  display: none; /* shown via media query below */
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #ffffff;
+  border-top: 2px solid var(--gold);
+  box-shadow: 0 -2px 10px rgba(0,0,0,.06);
+  z-index: 200;
+  padding-bottom: env(safe-area-inset-bottom); /* iPhone notch support */
+}
+/* Each nav item */
+.bn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 8px 4px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #b0bec5;
+  font-size: 10px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+  min-height: 58px;
+  cursor: pointer;
+  transition: color .15s;
+}
+/* Active nav item: gold-dark on white bg */
+.bn.on { color: var(--gold-dark); }
+.bn-ic { font-size: 22px; line-height: 1; }
+/* Tiny gold dot under active icon */
+.bn.on .bn-ic::after {
+  content: '';
+  display: block;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--gold-dark);
+  margin: 2px auto 0;
+}
+
+/* Mobile-specific overrides */
+@media (max-width: 700px) {
+  #botnav { display: flex; }   /* show bottom nav */
+  #tabs   { display: none; }   /* hide header tabs */
+  #wrap   { padding-bottom: 100px; } /* space for bottom nav */
+  .ht     { margin-bottom: 4px; }
+  /* Hide header buttons on mobile — shown in records tab instead */
+  .hr .expb, .hr .cfgb { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   PWA INSTALL BANNER
+   Appears ~2 seconds after first visit on Chrome/Android
+════════════════════════════════════════════════════════════════ */
+#install-banner {
+  display: none; /* JS sets to flex when install prompt is available */
+  position: fixed;
+  bottom: 72px; left: 12px; right: 12px;
+  background: #ffffff;
+  border: 2px solid var(--gold);
+  color: var(--text);
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  z-index: 500;
+  box-shadow: var(--shadow-lg);
+  align-items: center;
+  gap: 12px;
+}
+/* Offline bar — red strip at very top when no internet */
+#offline-bar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: var(--red);
+  color: #fff;
+  text-align: center;
+  padding: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 600;
+  font-family: var(--font-display);
+  letter-spacing: .3px;
+}
+
+/* Section divider used inside forms */
+.sec-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--border);
+}
+.sec-title span {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text-mid);
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     OFFLINE INDICATOR BAR
+     Shown automatically when internet connection is lost.
+══════════════════════════════════════════════════════════ -->
+<div id="offline-bar">
+  📴 &nbsp;You're offline — data is saved on this device and will sync when reconnected
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+══════════════════════════════════════════════════════════ -->
+<div id="hdr">
+  <div class="hi">
+    <div class="ht">
+
+      <!-- Helix Industries Logo Mark
+           The real logo is two interlocking L-bracket shapes.
+           We wrap the SVG in a slightly lighter panel (#3d5060 = slate-mid)
+           so the dark inner cutouts are visible against the deep header bg.
+           Gold border ring adds crisp definition. -->
+      <!-- Logo mark: panel bg is #1a2730 (distinct dark teal-slate).
+           The two gold L-shapes sit on top. The bracket "notch" is simply
+           the panel background showing through — no cutout rects needed.
+           This gives full contrast: gold on dark, gap readable on dark. -->
+      <div class="logo-mark">
+        <div style="width:46px;height:46px;background:#fff8e1;border-radius:10px;
+                    display:flex;align-items:center;justify-content:center;
+                    border:2px solid var(--gold);flex-shrink:0">
+          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
+            <!-- TOP-LEFT gold L-shape: horizontal bar + vertical bar -->
+            <!-- Full rectangle first, then the inner corner cut out by NOT drawing there -->
+            <polygon points="2,2 14,2 14,7 7,7 7,18 2,18" fill="#f7b810"/>
+
+            <!-- BOTTOM-RIGHT gold reverse-L-shape -->
+            <polygon points="22,18 34,18 34,34 22,34 22,29 29,29 29,18" fill="#f7b810"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- App title and brand tagline -->
+      <div class="hd-title">
+        <h1>HELIX INDUSTRIES</h1>
+        <span class="tagline">MATERIAL REGISTER</span>
+      </div>
+
+      <!-- Right-side: sync status + action buttons -->
+      <div class="hr">
+        <!-- Sync dot: grey=local only, green=synced, amber=syncing, red=error -->
+        <span class="spill">
+          <span class="sdot" id="sdot"></span>
+          <span id="slbl">Local Only</span>
+        </span>
+        <button class="expb" onclick="exportExcel()">⬇ Export</button>
+        <button class="cfgb" onclick="toggleSetup()">⚙ Sheets</button>
+      </div>
+    </div>
+
+    <!-- Desktop tab navigation (hidden on phones — bottom nav used there) -->
+    <div id="tabs">
+      <button class="tb on" id="t-in"  style="--c:#22c55e" onclick="goTab('inward')">
+        ▼ INWARD &nbsp;<span class="tc" id="c-in">0</span>
+      </button>
+      <button class="tb"    id="t-out" style="--c:#f7b810" onclick="goTab('dispatch')">
+        ▲ DISPATCH &nbsp;<span class="tc" id="c-out">0</span>
+      </button>
+      <button class="tb"    id="t-rec" style="--c:#f7b810" onclick="goTab('records')">
+        ≡ RECORDS &nbsp;<span class="tc" id="c-rec">0</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     MAIN CONTENT
+══════════════════════════════════════════════════════════ -->
+<div id="wrap">
+
+  <!-- ─────────────────────────────────────────────────────
+       GOOGLE SHEETS SETUP PANEL
+       Hidden by default. Tap ⚙ Sheets in header to open.
+  ───────────────────────────────────────────────────────── -->
+  <div id="sup">
+    <h3>⚙ Google Sheets Setup — one-time only</h3>
+    <ol class="ssl">
+      <li>Open your Google Sheet → click <b>Extensions → Apps Script</b></li>
+      <li>Delete any existing code, paste the script below, click <b>Save 💾</b></li>
+      <li>Click <b>Deploy → New deployment → Web app</b></li>
+      <li>Set <b>Execute as: Me</b> &amp; <b>Who has access: Anyone</b> → click <b>Deploy</b></li>
+      <li>Copy the <b>Web App URL</b>, paste it in the box below, click <b>Save URL</b></li>
+    </ol>
+    <div id="diag-out" style="display:none;margin-top:10px;background:#f0f4f8;border:1.5px solid #dde1e7;border-radius:8px;padding:12px;font-family:Courier New,monospace;font-size:11px;color:#2c3b48;white-space:pre-wrap;max-height:300px;overflow-y:auto;line-height:1.6"></div>
+    <p style="font-size:12px;color:#78350f;margin:6px 0 10px;line-height:1.6;background:#fef9e7;padding:8px 12px;border-radius:6px;border-left:3px solid #d97706">
+      <b>ℹ️ About the Test button:</b> It only works when the app is <b>hosted</b> (GitHub Pages / Netlify).
+      If you opened this as a local HTML file, the test will fail — but your URL is saved and
+      sync will work fine. Just save a dispatch entry and check your Google Sheet to verify.
+    </p>
+    <details>
+      <summary style="cursor:pointer;font-family:var(--font-display);font-weight:700;color:#92400e;font-size:13px;letter-spacing:.3px">
+        📋 Show Apps Script code to copy
+      </summary>
+      <div style="position:relative;margin-top:8px">
+        <div id="codebox"></div><!-- filled by JavaScript on page load -->
+        <button onclick="copyCode()" style="position:absolute;top:8px;right:8px;background:var(--gold);color:var(--slate-deep);border:none;padding:4px 10px;border-radius:5px;font-size:11px;font-weight:700;font-family:var(--font-display)">
+          COPY
+        </button>
+      </div>
+    </details>
+    <div class="srow">
+      <input id="urlin" placeholder="Paste Apps Script Web App URL here…" type="url"/>
+      <button onclick="saveUrl()"  style="background:var(--gold);color:#1a1a1a;font-weight:700">Save URL</button>
+      <button onclick="testUrl()"  style="background:var(--green)">Test</button>
+      <button onclick="diagnose()" style="background:#7c3aed;color:#fff;font-weight:700;padding:10px 16px;border:none;border-radius:var(--radius-md);font-family:var(--font-display);font-size:13px;min-height:44px">🔍 Diagnose</button>
+      <button onclick="manualSync()" id="sync-now-btn" style="background:#0ea5e9;color:#fff;font-weight:700;padding:10px 16px;border:none;border-radius:var(--radius-md);font-family:var(--font-display);font-size:13px;min-height:44px">📤 Sync Now</button>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       PANEL 1: INWARD TAB
+       Record raw materials arriving at the factory.
+       Shows material rows AFTER supplier is chosen.
+  ═══════════════════════════════════════════════════ -->
+  <div id="p-inward">
+    <div class="card" style="--ac:#22c55e">
+      <div class="ch">
+        <h2>▼ &nbsp;MATERIAL INWARD</h2>
+        <p>Record raw materials received at the factory</p>
+      </div>
+      <div class="cb">
+
+        <!-- Step 1: Choose supplier — drives Material and Vehicle dropdowns -->
+        <div style="margin-bottom:14px">
+          <label class="lbl">Supplier Name *</label>
+          <select class="inp" id="in-sup" onchange="onSupChange()">
+            <option value="">— Select Supplier —</option>
+            <option>ओम विष्णु (Om Vishnu - Bajri)</option>
+            <option>एन.डी. स्टोन (N.D. Stone - Gitti)</option>
+            <option>अलंकार उद्योग (Alankar Udyog - Gitti)</option>
+            <option>चैलाराम जी (Chelaram Ji - Gitti)</option>
+            <option>महादेव स्टोन (Mahadev Stone - Gitti)</option>
+            <option>अल्ट्राटेक (Ultratech - Cement)</option>
+            <option>धायल (Dhayal - Water Tanker)</option>
+            <option value="__oth__">Other (type below)</option>
+          </select>
+          <!-- Shows only when "Other" is selected above -->
+          <input class="inp mt7" id="in-sup-c" placeholder="Enter supplier name" style="display:none"/>
+        </div>
+
+        <!-- Step 2: Material rows — appear after supplier is chosen -->
+        <div id="in-body" style="display:none">
+          <div class="sec-title">
+            <span>Material Entries</span>
+            <button class="addb" onclick="addInRow()">+ Add Material</button>
+          </div>
+          <!-- Material rows are injected here by addInRow() -->
+          <div id="in-rows"></div>
+          <!-- Save button — collects form data and saves locally + to Google Sheets -->
+          <button class="savb savb-green" id="in-savb" onclick="submitIn()">
+            ✓ &nbsp;Save Inward Entry
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       PANEL 2: DISPATCH TAB
+       Record finished goods leaving the factory.
+  ═══════════════════════════════════════════════════ -->
+  <div id="p-dispatch" style="display:none">
+    <div class="card" style="--ac:var(--gold)">
+      <div class="ch">
+        <h2>▲ &nbsp;MATERIAL DISPATCH</h2>
+        <p>Record materials dispatched from factory to site</p>
+      </div>
+      <div class="cb">
+
+        <!-- Header fields common to the whole dispatch entry -->
+        <div class="g3" style="margin-bottom:14px">
+
+          <!-- Who is filling this — used for separate Excel + Google Sheets tabs -->
+          <div>
+            <label class="lbl">Entered By *</label>
+            <select class="inp" id="out-who">
+              <option value="">— Select Name —</option>
+              <option>Mukesh</option>
+              <option>Subhash</option>
+              <option>Anandaram</option>
+              <option>Guard</option>
+            </select>
+          </div>
+
+          <!-- Which customer or construction site is receiving the material -->
+          <div>
+            <label class="lbl">Party / Site Name *</label>
+            <input class="inp" id="out-party" placeholder="Party or site name"/>
+          </div>
+
+          <!-- Invoice or delivery note number -->
+          <div>
+            <label class="lbl">Bill / Challan Number *</label>
+            <input class="inp" id="out-bill" placeholder="Bill / Challan No."/>
+          </div>
+
+          <!-- Vehicle — spans full width of the 3-col grid -->
+          <div class="sp3">
+            <label class="lbl">Vehicle Number *</label>
+            <div style="display:flex;gap:8px">
+              <select class="inp" id="out-veh" onchange="onVehChg()" style="flex:1">
+                <option value="">— Select Vehicle —</option>
+                <option>RJ 19 RF 8056</option>
+                <option>RJ 07 RA 9480</option>
+                <option>RJ 19 GJ 9279</option>
+                <option>RJ 19 GG 2398</option>
+                <option value="__oth__">Other</option>
+              </select>
+              <!-- Shows when "Other" is selected above -->
+              <input class="inp" id="out-veh-c" placeholder="e.g. RJ 19 GG 2398" style="display:none;flex:1" onblur="onVehCInput()" oninput="this.value=this.value.toUpperCase()"/>
+            </div>
+          </div>
+
+        </div><!-- end header fields -->
+
+        <!-- Per-material rows section -->
+        <div class="sec-title">
+          <span>Materials to Dispatch</span>
+          <button class="addb" onclick="addOutRow()">+ Add Material</button>
+        </div>
+        <!-- Material rows injected here by addOutRow() -->
+        <div id="out-rows"></div>
+
+        <!-- Save dispatch — gold button (branded) -->
+        <button class="savb" id="out-savb" onclick="submitOut()">
+          ✓ &nbsp;Save Dispatch Entry
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════
+       PANEL 3: RECORDS TAB
+       View / delete all past entries.
+  ═══════════════════════════════════════════════════ -->
+  <div id="p-records" style="display:none">
+
+    <!-- Toggle bar: switch between Inward and Dispatch view -->
+    <div class="sbar">
+      <div class="tgrp">
+        <button class="tog on"  id="rb-in"  onclick="goRec('inward')">▼ Inward (<span id="rc-in">0</span>)</button>
+        <button class="tog off" id="rb-out" onclick="goRec('dispatch')">▲ Dispatch (<span id="rc-out">0</span>)</button>
+      </div>
+      <!-- Export button shown inline in records (also shown in header on desktop) -->
+      <button class="expb" onclick="exportExcel()" style="font-size:12px">⬇ Export Excel</button>
+    </div>
+
+    <!-- Mobile-only: Google Sheets setup button (since header buttons hidden on mobile) -->
+    <div style="margin-bottom:10px;display:none" id="mob-cfg">
+      <button onclick="toggleSetup()"
+        style="width:100%;background:var(--gold);color:#1a1a1a;border:none;padding:11px;border-radius:var(--radius-md);font-weight:700;font-size:13px;font-family:var(--font-display);letter-spacing:.3px">
+        ⚙ Configure Google Sheets Sync
+      </button>
+    </div>
+
+    <!-- Table containers — only one is shown at a time -->
+    <div class="card">
+      <div id="rt-in"></div>
+      <div id="rt-out" style="display:none"></div>
+    </div>
+
+  </div><!-- end records panel -->
+
+</div><!-- end #wrap -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     MOBILE BOTTOM NAVIGATION BAR
+     Only visible on small screens.
+══════════════════════════════════════════════════════════ -->
+<nav id="botnav">
+  <button class="bn on" id="bn-in"  onclick="goTab('inward')">
+    <span class="bn-ic">▼</span>
+    <span>Inward</span>
+  </button>
+  <button class="bn"    id="bn-out" onclick="goTab('dispatch')">
+    <span class="bn-ic">▲</span>
+    <span>Dispatch</span>
+  </button>
+  <button class="bn"    id="bn-rec" onclick="goTab('records')">
+    <span class="bn-ic">≡</span>
+    <span>Records</span>
+  </button>
+</nav>
+
+<!-- Toast notification popup (auto-hides after 3.5 seconds) -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PWA INSTALL BANNER
+     Shown on Chrome/Android when app can be installed
+══════════════════════════════════════════════════════════ -->
+<div id="install-banner">
+  <!-- Mini version of logo mark -->
+  <svg viewBox="0 0 32 32" fill="none" width="32" height="32" flex-shrink="0" style="flex-shrink:0">
+    <rect x="2" y="2" width="10" height="4"  fill="#f7b810"/>
+    <rect x="2" y="2" width="4"  height="14" fill="#f7b810"/>
+    <rect x="20" y="26" width="10" height="4" fill="#f7b810"/>
+    <rect x="26" y="16" width="4" height="14" fill="#f7b810"/>
+    <rect x="6" y="6" width="6" height="4"  fill="#e8e8e8"/>
+    <rect x="6" y="6" width="4" height="8"  fill="#e8e8e8"/>
+    <rect x="20" y="22" width="6" height="4" fill="#e8e8e8"/>
+    <rect x="22" y="18" width="4" height="8" fill="#e8e8e8"/>
+  </svg>
+  <div style="flex:1">
+    <div style="font-family:var(--font-display);font-weight:800;font-size:14px;letter-spacing:.3px;color:var(--slate)">INSTALL HELIX REGISTER</div>
+    <div style="font-size:11px;color:var(--text-muted);margin-top:2px;font-family:var(--font-body)">Add to home screen — works offline too</div>
+  </div>
+  <button id="install-btn" style="background:var(--gold);color:var(--slate-deep);border:none;padding:8px 14px;border-radius:var(--radius-sm);font-family:var(--font-display);font-weight:800;font-size:12px;letter-spacing:.3px;white-space:nowrap">
+    INSTALL
+  </button>
+  <button onclick="g('install-banner').style.display='none'"
+    style="background:var(--surface2);border:1.5px solid var(--border);color:var(--text-muted);padding:8px 10px;border-radius:var(--radius-sm);font-size:14px">
+    ✕
+  </button>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     JAVASCRIPT — ALL APPLICATION LOGIC
+     Organised into numbered sections with plain-English comments.
+══════════════════════════════════════════════════════════════════ -->
+<script>
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 1 — MASTER DATA
+   All dropdown values and mappings are defined here.
+   To add a new supplier, vehicle, material, or design —
+   this is the ONLY section you need to edit.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Which vehicles belong to each INWARD supplier.
+   Used to filter the vehicle dropdown after a supplier is selected. */
+var SV = {
+  "ओम विष्णु (Om Vishnu - Bajri)":         ["RJ 28 GA 4903","3837","4455"],
+  "एन.डी. स्टोन (N.D. Stone - Gitti)":     ["RJ 19 GF 7363","RJ 19 GF 7365","RJ 19 GF 7354"],
+  "अलंकार उद्योग (Alankar Udyog - Gitti)": ["5770","1044","3359","8384","6524","5535","3949"],
+  "चैलाराम जी (Chelaram Ji - Gitti)":      ["RJ 19 GD 4474"],
+  "महादेव स्टोन (Mahadev Stone - Gitti)":  ["RJ 19 GJ 5297"],
+  "अल्ट्राटेक (Ultratech - Cement)":       [],
+  "धायल (Dhayal - Water Tanker)":          ["RJ 19 GJ 0320","RJ 19 GD 5152"]
+};
+
+/* Which materials each INWARD supplier delivers.
+   Selecting a supplier fills the Material Name dropdown with these. */
+var SM = {
+  "ओम विष्णु (Om Vishnu - Bajri)":         ["Sand"],
+  "एन.डी. स्टोन (N.D. Stone - Gitti)":     ["6 mm","10 mm","20 mm","Dust","Mix Dust"],
+  "अलंकार उद्योग (Alankar Udyog - Gitti)": ["Dust","Mix Dust","6 mm","10 mm","20 mm"],
+  "चैलाराम जी (Chelaram Ji - Gitti)":      ["Dust","Mix Dust","6 mm","10 mm","20 mm"],
+  "महादेव स्टोन (Mahadev Stone - Gitti)":  ["Dust","Mix Dust","6 mm","10 mm","20 mm"],
+  "अल्ट्राटेक (Ultratech - Cement)":       ["Cement Bag","Cement Bulker"],
+  "धायल (Dhayal - Water Tanker)":          ["10 Chakka Tanker","6 Chakka Tanker"]
+};
+
+/* English-only name for each supplier — stored in records & Excel (not Hindi) */
+var SE = {
+  "ओम विष्णु (Om Vishnu - Bajri)":         "Om Vishnu",
+  "एन.डी. स्टोन (N.D. Stone - Gitti)":     "N.D. Stone",
+  "अलंकार उद्योग (Alankar Udyog - Gitti)": "Alankar Udyog",
+  "चैलाराम जी (Chelaram Ji - Gitti)":      "Chelaram Ji",
+  "महादेव स्टोन (Mahadev Stone - Gitti)":  "Mahadev Stone",
+  "अल्ट्राटेक (Ultratech - Cement)":       "Ultratech",
+  "धायल (Dhayal - Water Tanker)":          "Dhayal"
+};
+
+/* DISPATCH: Which designs are available for each dispatch type.
+   "Other" type shows a free-text input instead. */
+/* Products available per machine type.
+   Key = machine name shown in dropdown.
+   Value = list of products for that machine.
+   "Other" machine shows a free-text product input instead of a dropdown. */
+var DD = {
+  "Apollo": [
+    "Hexagon","8x8 Quad","8x4",
+    "Kerbstone Round","Kerbstone Chamfered","Kerbstone Bullnose"
+  ],
+  "Parijatha PBM+": [
+    "Hexagon","Zigzag","I-Shape","8x4","Tricon","S-Paver"
+  ],
+  "Rubber Mould": [
+    "Jumbo","Zigzag","Euphrates","River Quad","3D Hexa","Cobble",
+    "8x4","4x4","Cobble 4.5\"","X-Block",
+    "Cover Block Big","Cover Block Small","36 Striker","Cross Strip",
+    "Matrix","Riveira","BB Bali","BB Aruba","BB Maui","BB Maldives",
+    "BB Ibiza","BB Barbados","Cool Roof Tile","Drain Channel"
+  ],
+  "Columbia": ["Bricks","Kerbstone Round","Kerbstone Chamfered","Quad","Zigzag"],
+  "Other": []       /* Other — free-text input shown */
+};
+
+/* DISPATCH: Machine list — pure English now.
+   Each value is both displayed in UI and saved to records.
+   "Columbia" and "Other" show a free-text Product input instead of dropdown. */
+var DT = [
+  "Apollo",
+  "Parijatha PBM+",
+  "Rubber Mould",
+  "Columbia",
+  "Other"
+];
+
+/* DISPATCH: Colour options — "Other" shows a free-text input */
+var COLS = [
+  "Grey","Dark Grey","Red","Yellow","Chocolate",
+  "Orange","White","Blue","Green","Other"
+];
+
+/* DISPATCH: Thickness options — "Other" shows a free-text input */
+var THKS = ["20 MM","25 MM","30 MM","60 MM","70 MM","75 MM","80 MM","100 MM","150 MM","Other"];
+
+/* Names for the "Entered By" dropdown. Each gets their own Google Sheet tab + Excel tab. */
+var PEOPLE = ["Mukesh","Subhash","Anandaram","Guard"];
+
+/* MUKESH_VEHICLES: vehicles that belong exclusively to Mukesh.
+   The "Combined" sheet rule is:
+     - ALL entries by Subhash     → go to Combined
+     - ALL entries by Anandaram   → go to Combined
+     - Mukesh entries ONLY when the vehicle is NOT in this list → go to Combined
+     (i.e. Mukesh entries on his own vehicles stay out of Combined)
+   To update: add/remove vehicle numbers from this array. */
+var MUKESH_VEHICLES = ["RJ 19 RF 8056","RJ 07 RA 9480","RJ 19 GJ 9279","RJ 19 GG 2398"];
+
+/* Month names used when building the "Month" column value */
+var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 2 — STATE & STORAGE
+   Records live here (in-memory and in browser localStorage).
+   localStorage survives page refresh and browser close.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Storage keys — if you change the data structure, bump v5→v6 etc.
+   This makes old saved data get ignored rather than crashing. */
+var IK = "hf_in_v5";   /* localStorage key for inward records  */
+var OK = "hf_out_v5";  /* localStorage key for dispatch records */
+var SK = "hf_sc";      /* localStorage key for the Sheets URL  */
+var QK = "hf_queue";   /* localStorage key for the sync queue  */
+
+/* Load saved data on startup. JSON.parse turns the saved text back into arrays. */
+var inR  = JSON.parse(localStorage.getItem(IK) || "[]");
+var outR = JSON.parse(localStorage.getItem(OK) || "[]");
+var scUrl = localStorage.getItem(SK) || "";
+
+/* Row counter — reset to 0 after each successful form save */
+var inN  = 0;
+var outN = 0;
+/* Remember which sub-tab was last active in the Records panel */
+var recV = "inward";
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 3 — UTILITY FUNCTIONS
+   Small helper functions used throughout the code.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Save both record arrays to the browser's localStorage */
+function sl() {
+  localStorage.setItem(IK, JSON.stringify(inR));
+  localStorage.setItem(OK, JSON.stringify(outR));
+}
+
+/* Generate a short unique ID for each record.
+   Combines timestamp + random characters to ensure uniqueness. */
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+/* Return the current date, time, and month string */
+function ts() {
+  var d = new Date();
+  return {
+    date:  d.toLocaleDateString("en-IN"),                          /* e.g. "24/02/2026" */
+    time:  d.toLocaleTimeString("en-IN", {hour12:false}),          /* e.g. "14:30:00"   */
+    month: MONS[d.getMonth()] + " " + d.getFullYear()             /* e.g. "Feb 2026"   */
+  };
+}
+
+/* Shortcut for document.getElementById() */
+function g(id) { return document.getElementById(id); }
+
+/* Update the count badges on all tabs and the records toggle buttons */
+function upd() {
+  var ic = inR.length, oc = outR.length;
+  g("c-in").textContent  = ic;
+  g("c-out").textContent = oc;
+  g("c-rec").textContent = ic + oc;
+  g("rc-in").textContent  = ic;
+  g("rc-out").textContent = oc;
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 4 — TOAST NOTIFICATION
+   Small message that pops up at the bottom of the screen.
+   type: "ok"=green | "err"=red | "inf"=slate | "wrn"=amber
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+var tt; /* stores the hide-timer so we can cancel it if another toast fires */
+
+function showMsg(m, t) {
+  clearTimeout(tt);
+  var el = g("toast");
+  el.textContent = m;
+  el.style.background =
+      t === "err" ? "#dc2626"
+    : t === "inf" ? "#4a5e6e"
+    : t === "wrn" ? "#d97706"
+    : "#15803d";  /* default: green (success) */
+  el.style.display = "block";
+  /* Auto-hide after 3.5 seconds */
+  tt = setTimeout(function() { el.style.display = "none"; }, 3500);
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 5 — SYNC STATUS INDICATOR
+   The coloured dot in the header header shows connection state.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function syncSt(s) {
+  var dot = g("sdot"), lbl = g("slbl");
+  if (s === "ok") {
+    dot.style.background = "#4ade80"; dot.style.animation = "none";
+    lbl.textContent = "Synced";
+  } else if (s === "ing") {
+    dot.style.background = "#f7b810"; dot.style.animation = "pulse 1s infinite";
+    lbl.textContent = "Syncing…";
+  } else if (s === "err") {
+    dot.style.background = "#f87171"; dot.style.animation = "none";
+    lbl.textContent = "Sync Failed";
+  } else {
+    dot.style.background = "#8a9aaa"; dot.style.animation = "none";
+    lbl.textContent = "Local Only";
+  }
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 6 — GOOGLE SHEETS SYNC
+   Sends data to multiple sheet tabs per save.
+   Inward → just "Inward" tab.
+   Dispatch → "Outward" (combined) + "Dispatch - [Name]" (per person).
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Send one POST request to the Apps Script web app.
+   sheet   = name of the Google Sheet tab to write to
+   headers = column headers (first row, created once if tab is new)
+   rows    = array of data rows to append */
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SYNC QUEUE SYSTEM
+   ─────────────────────────────────────────────────────────────
+   Every Sheets write is first saved to a persistent queue in
+   localStorage. A background loop retries failed/pending items
+   every 30 seconds and also fires immediately when the device
+   comes back online. This guarantees zero missed entries even
+   if the user is offline, closes the app mid-sync, or the
+   network drops partway through a save.
+
+   Queue item shape:
+   { id, type ("inward"|"dispatch"), who, veh, headers, rows,
+     added (ISO timestamp), tries (attempt count), lastErr }
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── Queue helpers ── */
+function qLoad()     { try { return JSON.parse(localStorage.getItem(QK) || "[]"); } catch(e) { return []; } }
+function qSave(q)    { localStorage.setItem(QK, JSON.stringify(q)); }
+function qRemove(id) { qSave(qLoad().filter(function(x){ return x.id !== id; })); }
+
+function updateQueueBadge() {
+  var pending = qLoad().length;
+  var lbl = g("slbl"), dot = g("sdot");
+  if (pending > 0) {
+    lbl.textContent        = pending + " pending";
+    dot.style.background   = "#f7b810";
+    dot.style.animation    = "pulse 1s infinite";
+  }
+}
+
+/* ── Single HTTP call — sends ALL sheets for one entry in ONE request ──
+   This is the key anti-duplicate fix. Instead of 3 separate HTTP calls
+   (Outward, Dispatch-Who, Combined), we send everything in one request.
+   Apps Script writes all sheets atomically. If it fails, nothing is written
+   and the item stays in queue for retry — no partial writes, no duplicates. */
+async function syncItem(item) {
+  var payload;
+
+  if (item.type === "inward") {
+    payload = {
+      action:  "writeAll",
+      rowId:   item.id,          /* server uses this to skip already-written rows */
+      sheets: [
+        { sheet: "Inward", headers: item.headers, rows: item.rows }
+      ]
+    };
+  } else {
+    var combinedRows = item.rows.filter(function(row) {
+      if (item.who === "Guard")  return false;
+      if (item.who === "Mukesh") return MUKESH_VEHICLES.indexOf(row[5]) === -1;
+      return true;
+    });
+    var sheets = [
+      { sheet: "Outward",                headers: item.headers, rows: item.rows },
+      { sheet: "Dispatch - " + item.who, headers: item.headers, rows: item.rows }
+    ];
+    if (combinedRows.length > 0) {
+      sheets.push({
+        sheet: "Combined", headers: item.headers, rows: combinedRows,
+        sortByDate: true, rebuildSummaryAfter: true
+      });
+    }
+    payload = { action: "writeAll", rowId: item.id, sheets: sheets };
+  }
+
+  var r = await fetch(scUrl, {
+    method: "POST", headers: { "Content-Type": "text/plain" },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  var txt = await r.text();
+  var j;
+  try { j = JSON.parse(txt); } catch(ex) { throw new Error("Bad JSON: " + txt.slice(0,80)); }
+  if (j.status !== "ok") throw new Error("Script error: " + txt.slice(0,120));
+  if (j.summaryRows !== undefined && j.summaryRows > 0) {
+    showMsg("✓ Synced — Daily Summary: " + j.summaryRows + " rows", "inf");
+  }
+  return j;
+}
+
+/* ── Main sync loop ──
+   Uses localStorage "hf_syncing" flag so even if the app is closed
+   mid-sync and reopened, we don't re-send items still being processed. */
+var _syncing = false;
+async function runSyncQueue() {
+  if (_syncing || !scUrl || !navigator.onLine) return;
+  var q = qLoad();
+  if (!q.length) { syncSt(scUrl ? "ok" : "loc"); return; }
+
+  _syncing = true;
+  localStorage.setItem("hf_syncing", "1");
+  syncSt("ing");
+
+  for (var i = 0; i < q.length; i++) {
+    var item = q[i];
+    /* Skip items already marked as syncing in a previous interrupted session */
+    try {
+      await syncItem(item);
+      qRemove(item.id);   /* only removed AFTER confirmed server ack */
+    } catch(e) {
+      var qq = qLoad();
+      var ix = qq.findIndex(function(x){ return x.id === item.id; });
+      if (ix !== -1) {
+        qq[ix].tries   = (qq[ix].tries||0) + 1;
+        qq[ix].lastErr = e.message || String(e);
+        qSave(qq);
+      }
+    }
+  }
+
+  _syncing = false;
+  localStorage.removeItem("hf_syncing");
+
+  var remaining = qLoad().length;
+  if (remaining === 0) {
+    syncSt("ok");
+    g("slbl").textContent = "Synced";
+  } else {
+    syncSt("err");
+    updateQueueBadge();
+    showMsg(remaining + " entr" + (remaining>1?"ies":"y") + " pending — will retry automatically", "wrn");
+  }
+}
+
+/* ── Queue an inward entry then try to sync immediately ── */
+async function pushInward(rows) {
+  if (!scUrl) return;
+  var IH = ["Date","Month","Time","Supplier Name","Bill/Challan No.","Material Name","Vehicle No.","Quantity"];
+  var q = qLoad();
+  q.push({ id: uid(), type: "inward", headers: IH, rows: rows, added: new Date().toISOString(), tries: 0, lastErr: "" });
+  qSave(q);
+  updateQueueBadge();
+  runSyncQueue();
+}
+
+/* ── Queue a dispatch entry then try to sync immediately ── */
+async function pushDispatch(who, headers, rows, veh) {
+  if (!scUrl) return;
+  var q = qLoad();
+  q.push({ id: uid(), type: "dispatch", who: who, veh: veh, headers: headers, rows: rows, added: new Date().toISOString(), tries: 0, lastErr: "" });
+  qSave(q);
+  updateQueueBadge();
+  runSyncQueue();
+}
+
+
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 7 — SETUP PANEL (Google Sheets configuration UI)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Toggle the yellow setup panel open/closed */
+function toggleSetup() {
+  var el = g("sup");
+  el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
+  g("urlin").value = scUrl;  /* pre-fill the input with any existing saved URL */
+}
+
+/* Save the entered URL to localStorage and update the sync dot */
+function saveUrl() {
+  scUrl = g("urlin").value.trim();
+  localStorage.setItem(SK, scUrl);
+  syncSt(scUrl ? "ok" : "loc");
+  showMsg(scUrl ? "✓ URL saved — Google Sheets sync is now active" : "URL cleared", "inf");
+}
+
+/* Send a test GET request to verify the URL is correct and working */
+/* Diagnose: sends the exact same payload as a real Combined write,
+   then shows the raw response from Apps Script in full detail.
+   This tells us exactly what Apps Script is receiving and returning. */
+async function diagnose() {
+  var out = g("diag-out");
+  out.style.display = "block";
+  out.textContent = "Running diagnosis...\n\n";
+
+  if (!scUrl) { out.textContent += "ERROR: No URL saved. Paste URL and click Save URL first."; return; }
+
+  var log = function(msg) { out.textContent += msg + "\n"; };
+
+  // Step 1: GET request - basic connectivity
+  log("STEP 1: Testing basic connectivity (GET)...");
+  try {
+    var r1 = await fetch(scUrl);
+    var t1 = await r1.text();
+    log("  Status: " + r1.status);
+    log("  Response: " + t1.slice(0,200));
+  } catch(e) { log("  ERROR: " + e.message); }
+
+  // Step 2: Send a test POST with rebuildSummaryAfter:true and dummy row
+  log("\nSTEP 2: Sending test POST with rebuildSummaryAfter:true...");
+  var testPayload = {
+    sheet: "Combined",
+    headers: ["Date","Time","Entered By","Party Name","Bill/Challan Number","Vehicle No.","Machine","Product","Thickness","Color","Material Quantity"],
+    rows: [["TEST-"+new Date().toLocaleDateString("en-GB"),"00:00","Subhash","TEST PARTY","TEST-BILL","TEST-VEH","Apollo","Hexagon","60 MM","Grey",1]],
+    sortByDate: true,
+    rebuildSummaryAfter: true
+  };
+  log("  Payload: " + JSON.stringify(testPayload).slice(0,300));
+  try {
+    var r2 = await fetch(scUrl, {
+      method: "POST",
+      headers: {"Content-Type": "text/plain"},
+      body: JSON.stringify(testPayload)
+    });
+    var t2 = await r2.text();
+    log("  HTTP Status: " + r2.status);
+    log("  Raw response: " + t2.slice(0,500));
+    try {
+      var j2 = JSON.parse(t2);
+      log("  Parsed JSON: " + JSON.stringify(j2));
+      log("  status = " + j2.status);
+      log("  added = " + j2.added);
+      log("  summaryRows = " + j2.summaryRows);
+    } catch(ex) { log("  Could not parse as JSON: " + ex.message); }
+  } catch(e) { log("  FETCH ERROR: " + e.message); }
+
+  log("\nDiagnosis complete. Share this output to debug the issue.");
+}
+
+async function manualSync() {
+  var q = qLoad();
+  if (!q.length) { showMsg("✓ Nothing pending — all entries synced", "inf"); return; }
+  if (!scUrl)    { showMsg("No Sheets URL configured", "err"); return; }
+  if (!navigator.onLine) { showMsg("No internet — will sync automatically when online", "wrn"); return; }
+  var btn = g("sync-now-btn");
+  btn.textContent = "Syncing…";
+  btn.disabled = true;
+  await runSyncQueue();
+  btn.textContent = "📤 Sync Now";
+  btn.disabled = false;
+}
+
+function testUrl() {
+  if (!scUrl) { showMsg("Paste the URL first", "err"); return; }
+  syncSt("ing");
+  fetch(scUrl)
+    .then(function(r) { return r.json(); })
+    .then(function(j) {
+      if (j.status === "ready") { syncSt("ok"); showMsg("✅ Connection successful!"); }
+      else throw 0;
+    })
+    .catch(function() { syncSt("err"); showMsg("❌ Failed — check URL & permissions","err"); });
+}
+
+/* Copy the Apps Script code from the code box to the clipboard */
+function copyCode() {
+  navigator.clipboard.writeText(g("codebox").textContent)
+    .then(function() { showMsg("✓ Code copied to clipboard!"); })
+    .catch(function() { showMsg("Select and copy the code manually","inf"); });
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 8 — TAB SWITCHING
+   Shows the selected panel, hides the other two.
+   Also updates both the header tabs AND the mobile bottom nav.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function goTab(name) {
+  /* Show / hide the three content panels */
+  g("p-inward").style.display   = (name === "inward")   ? "" : "none";
+  g("p-dispatch").style.display = (name === "dispatch")  ? "" : "none";
+  g("p-records").style.display  = (name === "records")   ? "" : "none";
+  /* Update desktop header tab active state */
+  g("t-in").className  = "tb" + (name === "inward"   ? " on" : "");
+  g("t-out").className = "tb" + (name === "dispatch"  ? " on" : "");
+  g("t-rec").className = "tb" + (name === "records"   ? " on" : "");
+  /* Update mobile bottom nav active state */
+  g("bn-in").className  = "bn" + (name === "inward"   ? " on" : "");
+  g("bn-out").className = "bn" + (name === "dispatch"  ? " on" : "");
+  g("bn-rec").className = "bn" + (name === "records"   ? " on" : "");
+  /* If switching to Records, re-render with latest data */
+  if (name === "records") renderRec();
+  /* Scroll to top on mobile after tab switch */
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 9 — INWARD FORM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Called when supplier dropdown changes.
+   Reveals the material entry section (hidden until a supplier is chosen). */
+function onSupChange() {
+  var sel = g("in-sup").value;
+  /* Show the free-text box only if "Other" was selected */
+  g("in-sup-c").style.display = (sel === "__oth__") ? "" : "none";
+  if (sel) {
+    /* A supplier was chosen — show the material rows section */
+    g("in-body").style.display = "";
+    g("in-rows").innerHTML = "";  /* clear any rows from a previous selection */
+    inN = 0;
+    addInRow();  /* add the first blank material row automatically */
+  } else {
+    g("in-body").style.display = "none";
+  }
+}
+
+/* Add one blank material row to the Inward form.
+   Row contains: Material Name, Quantity, Vehicle No., Bill No. */
+function addInRow() {
+  var sup  = g("in-sup").value;
+  var vehs = SV[sup] || [];    /* vehicles for this supplier */
+  var mats = SM[sup] || [];    /* materials for this supplier */
+  var id   = "ir" + uid();     /* unique DOM id for this row element */
+  inN++;
+
+  /* Build <option> HTML for the vehicle and material dropdowns */
+  var vopt = vehs.map(function(v) { return "<option>" + v + "</option>"; }).join("") +
+             "<option value='__oth__'>Other</option>";
+  var mopt = mats.map(function(m) { return "<option>" + m + "</option>"; }).join("") +
+             "<option value='__oth__'>Other (type)</option>";
+
+  var div = document.createElement("div");
+  div.className = "mr";
+  div.id = id;
+  div.innerHTML =
+    "<div class='mrh'>" +
+      "<span class='mrl'>Material " + inN + "</span>" +
+      "<button class='rmb' onclick=\"remIn('" + id + "')\">&#x2715;</button>" +
+    "</div>" +
+    "<div class='g4'>" +
+      "<div><label class='lbl'>Material Name *</label>" +
+        "<select class='inp' data-k='mat' onchange='onMatChg(this)'>" +
+          "<option value=''>— Select —</option>" + mopt +
+        "</select>" +
+        "<input class='inp mt6' data-k='mat-c' placeholder='Enter material name' style='display:none'/></div>" +
+      "<div><label class='lbl'>Quantity *</label>" +
+        "<input class='inp' type='number' inputmode='numeric' placeholder='Qty' data-k='qty'/></div>" +
+      "<div><label class='lbl'>Vehicle No.</label>" +
+        "<select class='inp' data-k='veh' onchange='onVehChgIn(this)'>" +
+          "<option value=''>— Select —</option>" + vopt +
+        "</select>" +
+        "<input class='inp mt6' data-k='veh-c' placeholder='e.g. RJ 19 GG 2398' style='display:none'/></div>" +
+      "<div><label class='lbl'>Bill / Challan No.</label>" +
+        "<input class='inp' placeholder='Optional' data-k='bil'/></div>" +
+    "</div>";
+
+  g("in-rows").appendChild(div);
+  refreshIn();
+}
+
+/* Show free-text when "Other (type)" chosen in material dropdown */
+function onMatChg(s) { s.nextElementSibling.style.display = (s.value === "__oth__") ? "" : "none"; }
+/* Show free-text when "Other" chosen in inward vehicle dropdown */
+function onVehChgIn(s) {
+  var inp = s.nextElementSibling;  /* the free-text input right after the select */
+  inp.style.display = (s.value === "__oth__") ? "" : "none";
+  if (s.value === "__oth__") {
+    /* Auto-uppercase while typing */
+    inp.oninput = function() { this.value = this.value.toUpperCase(); };
+    /* Normalise to "RJ 19 GG 2398" format when user leaves the field */
+    inp.onblur  = function() { this.value = normaliseVeh(this.value); };
+  }
+}
+/* Remove a material row */
+function remIn(id) { g(id).remove(); refreshIn(); }
+/* Hide the remove button when only one row remains */
+function refreshIn() {
+  var rows = g("in-rows").querySelectorAll(".mr");
+  rows.forEach(function(r) {
+    r.querySelector(".rmb").style.display = (rows.length > 1) ? "" : "none";
+  });
+}
+
+/* Collect all inward rows, validate, save locally, push to Google Sheets */
+async function submitIn() {
+  var ss = g("in-sup").value;
+  var sr = (ss === "__oth__") ? g("in-sup-c").value.trim() : ss;
+  if (!sr) { showMsg("Select a supplier first", "err"); return; }
+
+  var t  = ts();
+  var se = SE[sr] || sr;   /* use English name for storage */
+  var add = [];
+
+  g("in-rows").querySelectorAll(".mr").forEach(function(row) {
+    var ms  = row.querySelector("[data-k='mat']").value;
+    var mc  = row.querySelector("[data-k='mat-c']").value.trim();
+    var mat = (ms === "__oth__") ? mc : ms;
+    var qty = row.querySelector("[data-k='qty']").value.trim();
+    if (!mat || !qty) return;  /* skip incomplete rows silently */
+    var vs  = row.querySelector("[data-k='veh']").value;
+    var vc  = row.querySelector("[data-k='veh-c']").value.trim();
+    add.push({
+      id: uid(), date: t.date, month: t.month, time: t.time,
+      supplierName: se,
+      billNo: row.querySelector("[data-k='bil']").value.trim(),
+      materialName: mat,
+      vehicleNo: (vs === "__oth__") ? vc : vs,
+      quantity: Number(qty)
+    });
+  });
+
+  if (!add.length) { showMsg("Add at least one material with a quantity","err"); return; }
+
+  /* Save to localStorage immediately (works offline) */
+  inR = inR.concat(add);
+  sl(); upd();
+
+  /* Show spinner while syncing */
+  var btn = g("in-savb");
+  btn.disabled = true;
+  btn.innerHTML = "<span class='spin-w'></span> &nbsp;Saving…";
+
+  /* Push to Google Sheets (if URL configured) */
+  await pushInward(add.map(function(r) {
+    return [r.date, r.month, r.time, r.supplierName, r.billNo, r.materialName, r.vehicleNo, r.quantity];
+  }));
+
+  /* Reset form */
+  btn.disabled = false;
+  btn.innerHTML = "&#10003; &nbsp;Save Inward Entry";
+  g("in-sup").value = "";
+  g("in-sup-c").style.display = "none";
+  g("in-body").style.display  = "none";
+  g("in-rows").innerHTML = "";
+  inN = 0;
+  showMsg("✓ " + add.length + " inward entr" + (add.length > 1 ? "ies" : "y") + " saved");
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 10 — DISPATCH FORM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Show free-text vehicle input when "Other" is chosen */
+function onVehChg() {
+  g("out-veh-c").style.display = (g("out-veh").value === "__oth__") ? "" : "none";
+}
+
+/* Normalise a vehicle number to the standard format: "RJ 19 GG 2398"
+   Rules:
+     1. Uppercase everything
+     2. Strip all spaces, then re-insert them at the correct positions:
+        - 2 letters  (state code  e.g. RJ)
+        - 2 digits   (district    e.g. 19)
+        - 2 letters  (series      e.g. GG)
+        - 4 digits   (number      e.g. 2398)
+   If the input doesn't match that pattern we return it uppercased but
+   otherwise unchanged so we never silently corrupt a valid custom entry.
+
+   Examples:
+     "rj19gg2398"   → "RJ 19 GG 2398"
+     "Rj 19 Gg2398" → "RJ 19 GG 2398"
+     "RJ19GG2398"   → "RJ 19 GG 2398"  */
+function normaliseVeh(v) {
+  if (!v) return v;
+  /* Step 1: uppercase and strip all spaces */
+  var s = v.toUpperCase().replace(/\s+/g, "");
+  /* Step 2: match the Indian vehicle number pattern */
+  var m = s.match(/^([A-Z]{2})(\d{2})([A-Z]{1,3})(\d{1,4})$/);
+  if (m) {
+    /* Pad series to fixed width isn't needed — just rejoin with spaces */
+    return m[1] + " " + m[2] + " " + m[3] + " " + m[4];
+  }
+  /* Doesn't match pattern — return uppercased version unchanged */
+  return s;
+}
+
+/* Called when user leaves the free-text vehicle field — normalise on blur */
+function onVehCInput() {
+  var el = g("out-veh-c");
+  el.value = normaliseVeh(el.value);
+}
+
+/* Add one blank material row to the Dispatch form.
+   Each row: Machine → Product, Thickness, Color, Quantity */
+function addOutRow() {
+  var id = "or" + uid();
+  outN++;
+
+  /* DT is now a plain string array — each value is both stored and displayed */
+  var topt = DT.map(function(t) {
+    return "<option value='" + t + "'>" + t + "</option>";
+  }).join("");
+  var hopt = THKS.map(function(h) { return "<option>" + h + "</option>"; }).join("");
+  var copt = COLS.map(function(c) { return "<option>" + c + "</option>"; }).join("");
+
+  var div = document.createElement("div");
+  div.className = "mr";
+  div.id = id;
+  div.innerHTML =
+    "<div class='mrh'>" +
+      "<span class='mrl'>Material " + outN + "</span>" +
+      "<button class='rmb' onclick=\"remOut('" + id + "')\">&#x2715;</button>" +
+    "</div>" +
+    "<div class='g6'>" +
+      /* Column 1: Dispatch Type — drives the Design Name dropdown */
+      "<div><label class='lbl'>Machine *</label>" +
+        "<select class='inp' data-k='typ' onchange='onTypChg(this)'>" +
+          "<option value=''>— Select Machine —</option>" + topt +
+        "</select></div>" +
+      /* Column 2: Design Name — populated when Type is chosen */
+      "<div><label class='lbl'>Product</label>" +
+        "<select class='inp' data-k='des' disabled><option value=''>— Select machine first —</option></select>" +
+        "<input class='inp mt6' data-k='des-c' placeholder='Enter product name' style='display:none'/></div>" +
+      /* Column 3: Thickness — 60/80/100/150mm or Other */
+      "<div><label class='lbl'>Thickness</label>" +
+        "<select class='inp' data-k='thk' onchange='onThkChg(this)'>" +
+          "<option value=''>— Select —</option>" + hopt +
+        "</select>" +
+        "<input class='inp mt6' data-k='thk-c' placeholder='e.g. 120 mm' style='display:none'/></div>" +
+      /* Column 4: Color */
+      "<div><label class='lbl'>Color</label>" +
+        "<select class='inp' data-k='col' onchange='onColChg(this)'>" +
+          "<option value=''>— Select Color —</option>" + copt +
+        "</select>" +
+        "<input class='inp mt6' data-k='col-c' placeholder='Enter color' style='display:none'/></div>" +
+      /* Column 5: Quantity */
+      "<div><label class='lbl'>Quantity *</label>" +
+        "<input class='inp' type='number' inputmode='numeric' placeholder='Qty' data-k='qty'/></div>" +
+    "</div>";
+
+  g("out-rows").appendChild(div);
+  refreshOut();
+}
+
+/* Show free-text when "Other" chosen in Thickness dropdown */
+function onThkChg(s) { s.nextElementSibling.style.display = (s.value === "Other") ? "" : "none"; }
+/* Show free-text when "Other" chosen in Color dropdown */
+function onColChg(s) { s.nextElementSibling.style.display = (s.value === "Other") ? "" : "none"; }
+
+/* Called when Dispatch Type changes.
+   Populates the Design dropdown with designs for that type,
+   or shows a free-text input if "Other" was selected. */
+/* Called when Machine dropdown changes.
+   "Columbia" and "Other" have no fixed products — show free-text input.
+   All other machines populate the Product dropdown from DD[machineName]. */
+function onTypChg(s) {
+  var row   = s.closest(".mr");
+  var tv    = s.value;
+  var dgs   = DD[tv] || [];
+  var ds    = row.querySelector("[data-k='des']");
+  var di    = row.querySelector("[data-k='des-c']");
+  /* Show free-text for "Other" and "Columbia" (no fixed product list) */
+  var isOth = (tv === "Other");
+
+  if (isOth) {
+    /* No fixed product list — show free-text input, hide dropdown */
+    ds.style.display = "none";
+    di.style.display = "";
+    di.placeholder   = "Enter product name";
+  } else {
+    /* Known machine — populate the Product dropdown and hide free-text */
+    ds.style.display = "";
+    di.style.display = "none";
+    ds.disabled = false;
+    var o = "<option value=''>— Select Product —</option>";
+    dgs.forEach(function(d) { o += "<option>" + d + "</option>"; });
+    o += "<option value='__oth__'>Other (type)</option>";
+    ds.innerHTML = o;
+    ds.onchange = function() { di.style.display = (this.value === "__oth__") ? "" : "none"; };
+  }
+}
+
+/* Remove a dispatch material row */
+function remOut(id) { g(id).remove(); refreshOut(); }
+/* Hide remove button when only one row left */
+function refreshOut() {
+  var rows = g("out-rows").querySelectorAll(".mr");
+  rows.forEach(function(r) {
+    r.querySelector(".rmb").style.display = (rows.length > 1) ? "" : "none";
+  });
+}
+
+/* Collect all dispatch rows, validate, save locally, push to Sheets */
+async function submitOut() {
+  /* Validate header fields */
+  var who   = g("out-who").value;
+  var party = g("out-party").value.trim();
+  var bill  = g("out-bill").value.trim();
+  var vs    = g("out-veh").value;
+  var vc    = g("out-veh-c").value.trim();
+  /* Normalise free-text vehicle to "RJ 19 GG 2398" format at save time */
+  var veh   = (vs === "__oth__") ? normaliseVeh(vc) : vs;
+
+  if (!who)   { showMsg("Select who is entering this","err");  return; }
+  if (!party) { showMsg("Enter party/site name","err");         return; }
+  if (!bill)  { showMsg("Enter bill/challan number","err");     return; }
+  if (!veh)   { showMsg("Select or enter vehicle number","err");return; }
+
+  var t   = ts();
+  var add = [];
+
+  g("out-rows").querySelectorAll(".mr").forEach(function(row) {
+    var tv  = row.querySelector("[data-k='typ']").value;
+    var qty = row.querySelector("[data-k='qty']").value.trim();
+    if (!tv || !qty) return;
+
+    /* Machine name: DT is now a plain string array — tv IS the machine name */
+    var isO   = (tv === "Other");
+    var ten   = tv;  /* machine name stored directly */
+
+    /* Product: dropdown for all machines; free-text only for "Other" machine */
+    var ds  = row.querySelector("[data-k='des']").value;
+    var di  = row.querySelector("[data-k='des-c']").value.trim();
+    var des = isO ? di : (ds === "__oth__" ? di : ds);
+
+    /* Thickness: select or free-text */
+    var hs  = row.querySelector("[data-k='thk']").value;
+    var hc  = row.querySelector("[data-k='thk-c']").value.trim();
+
+    /* Color: select or free-text */
+    var cs  = row.querySelector("[data-k='col']").value;
+    var cc  = row.querySelector("[data-k='col-c']").value.trim();
+
+    add.push({
+      id: uid(), date: t.date, time: t.time,
+      enteredBy: who, partyName: party, billNo: bill, vehicleNo: veh,
+      machine: ten,       /* machine name (was: dispatchedMaterial) */
+      product: des,       /* product name (was: designName) */
+      thickness: (hs === "Other") ? hc : hs,
+      color: (cs === "Other") ? cc : cs,
+      materialQuantity: Number(qty)
+    });
+  });
+
+  if (!add.length) { showMsg("Each material needs a type and quantity","err"); return; }
+
+  /* Save locally first (always works, even if offline) */
+  outR = outR.concat(add);
+  sl(); upd();
+
+  /* Show spinner */
+  var btn = g("out-savb");
+  btn.disabled = true;
+  btn.innerHTML = "<span class='spin'></span> &nbsp;Saving…";
+
+  /* Column headers for Sheets / Excel */
+  /* Column headers — "Dispatched Material" renamed to "Machine",
+     "Design Name" renamed to "Product" to match the new dispatch form labels */
+  var OH = ["Date","Time","Entered By","Party Name","Bill/Challan Number","Vehicle No.",
+            "Machine","Product","Thickness","Color","Material Quantity"];
+  var rowData = add.map(function(r) {
+    return [r.date,r.time,r.enteredBy,r.partyName,r.billNo,r.vehicleNo,
+            r.machine,r.product,r.thickness,r.color,r.materialQuantity];
+  });
+
+  /* Push to Google Sheets — sends to "Outward", "Dispatch - [Name]", and "Combined" tabs */
+  await pushDispatch(who, OH, rowData, veh);
+
+  /* Reset form */
+  btn.disabled = false;
+  btn.innerHTML = "&#10003; &nbsp;Save Dispatch Entry";
+  g("out-who").value   = "";
+  g("out-party").value = "";
+  g("out-bill").value  = "";
+  g("out-veh").value   = "";
+  g("out-veh-c").style.display = "none";
+  g("out-rows").innerHTML = "";
+  outN = 0;
+  addOutRow();  /* leave one blank row ready for next entry */
+  showMsg("✓ " + add.length + " dispatch entr" + (add.length > 1 ? "ies" : "y") + " saved");
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 11 — RECORDS TABLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* Toggle between Inward and Dispatch sub-tabs in Records panel */
+function goRec(v) {
+  recV = v;
+  g("rb-in").className  = "tog" + (v === "inward"    ? " on" : " off");
+  g("rb-out").className = "tog" + (v === "dispatch"  ? " on" : " off");
+  g("rt-in").style.display  = (v === "inward")    ? "" : "none";
+  g("rt-out").style.display = (v === "dispatch")  ? "" : "none";
+}
+
+/* Safely encode a value for HTML display. Returns a dash if empty. */
+function xe(s) {
+  if (s == null || s === "") return "<span class='da'>—</span>";
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+/* Return a colored badge for the dispatch type */
+function bdg(t) {
+  var c = t === "Machine Made" ? "bm" : t === "Rubber Moulded" ? "br" : "bo";
+  return "<span class='bdg " + c + "'>" + xe(t) + "</span>";
+}
+
+/* Build and render both tables (most recent entries shown first) */
+function renderRec() {
+  /* ── Inward table ── */
+  var inD = g("rt-in");
+  if (!inR.length) {
+    inD.innerHTML = "<div class='emp'><div class='empi'>📭</div><p>No inward entries yet</p></div>";
+  } else {
+    var rows = inR.slice().reverse().map(function(r) {
+      return "<tr>" +
+        "<td>" + xe(r.date) + "</td>" +
+        "<td style='color:var(--text-muted);font-size:12px'>" + xe(r.time) + "</td>" +
+        "<td><b style='color:var(--slate-deep)'>" + xe(r.supplierName) + "</b></td>" +
+        "<td>" + xe(r.billNo) + "</td>" +
+        "<td>" + xe(r.materialName) + "</td>" +
+        "<td style='color:var(--text-muted)'>" + xe(r.vehicleNo) + "</td>" +
+        "<td class='qi'>" + r.quantity + "</td>" +
+        "<td><button class='delb' onclick=\"delIn('" + r.id + "')\">🗑</button></td>" +
+      "</tr>";
+    }).join("");
+    inD.innerHTML =
+      "<div class='tw'><table>" +
+      "<thead><tr><th>Date</th><th>Time</th><th>Supplier</th><th>Bill No.</th>" +
+      "<th>Material</th><th>Vehicle</th><th>Qty</th><th></th></tr></thead>" +
+      "<tbody>" + rows + "</tbody></table></div>";
+  }
+
+  /* ── Dispatch table ── */
+  var outD = g("rt-out");
+  if (!outR.length) {
+    outD.innerHTML = "<div class='emp'><div class='empi'>📭</div><p>No dispatch entries yet</p></div>";
+  } else {
+    var orows = outR.slice().reverse().map(function(r) {
+      return "<tr>" +
+        "<td>" + xe(r.date) + "</td>" +
+        "<td style='color:var(--text-muted);font-size:12px'>" + xe(r.time) + "</td>" +
+        "<td><b style='color:var(--slate-deep)'>" + xe(r.enteredBy) + "</b></td>" +
+        "<td>" + xe(r.partyName) + "</td>" +
+        "<td>" + xe(r.billNo) + "</td>" +
+        "<td style='color:var(--text-muted)'>" + xe(r.vehicleNo) + "</td>" +
+        "<td>" + xe(r.machine) + "</td>" +
+        "<td>" + xe(r.product) + "</td>" +
+        "<td>" + xe(r.thickness) + "</td>" +
+        "<td>" + xe(r.color) + "</td>" +
+        "<td class='qo'>" + r.materialQuantity + "</td>" +
+        "<td><button class='delb' onclick=\"delOut('" + r.id + "')\">🗑</button></td>" +
+      "</tr>";
+    }).join("");
+    outD.innerHTML =
+      "<div class='tw'><table>" +
+      "<thead><tr><th>Date</th><th>Time</th><th>By</th><th>Party</th>" +
+      "<th>Bill No.</th><th>Vehicle</th><th>Machine</th><th>Product</th>" +
+      "<th>Thickness</th><th>Color</th><th>Qty</th><th></th></tr></thead>" +
+      "<tbody>" + orows + "</tbody></table></div>";
+  }
+  goRec(recV);  /* restore the correct sub-tab toggle */
+}
+
+/* Delete an inward record by its unique id */
+function delIn(id) {
+  if (!confirm("Delete this entry? This cannot be undone.")) return;
+  inR = inR.filter(function(r) { return r.id !== id; });
+  sl(); upd(); renderRec();
+  showMsg("Entry deleted","inf");
+}
+/* Delete a dispatch record by its unique id */
+function delOut(id) {
+  if (!confirm("Delete this entry? This cannot be undone.")) return;
+  outR = outR.filter(function(r) { return r.id !== id; });
+  sl(); upd(); renderRec();
+  showMsg("Entry deleted","inf");
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 12 — EXCEL EXPORT
+   Creates a .xlsx workbook with the following sheets:
+     • Inward              — all raw material arrivals
+     • Outward             — all dispatch records (everyone combined)
+     • Dispatch - Mukesh   — Mukesh's dispatches only
+     • Dispatch - Subhash  — Subhash's dispatches only
+     • Dispatch - Anandaram — Anandaram's dispatches only
+     • Dispatch - Guard    — Guard's dispatches only
+     • Combined            — filtered combined sheet
+     • Daily Summary       — aggregated totals by Machine/Product/Thickness/Color
+   (A person's sheet is skipped if they have no entries)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+function exportExcel() {
+  if (!inR.length && !outR.length) { showMsg("No records to export","err"); return; }
+  if (typeof XLSX === "undefined")  { showMsg("SheetJS not loaded — check internet","err"); return; }
+
+  var wb = XLSX.utils.book_new();
+
+  /* Column headers and widths for all Outward sheets.
+     "Dispatched Material" → "Machine", "Design Name" → "Product" */
+  var OH = ["Date","Time","Entered By","Party Name","Bill/Challan Number","Vehicle No.",
+            "Machine","Product","Thickness","Color","Material Quantity"];
+  var OW = [12,10,14,24,18,16,18,20,13,14,14].map(function(w) { return { wch: w }; });
+
+  /* Sheet 1: Inward */
+  var wi = XLSX.utils.aoa_to_sheet(
+    [["Date","Month","Time","Supplier Name","Bill/Challan No.","Material Name","Vehicle No.","Quantity"]]
+    .concat(inR.map(function(r) {
+      return [r.date, r.month, r.time, r.supplierName, r.billNo, r.materialName, r.vehicleNo, r.quantity];
+    }))
+  );
+  wi["!cols"] = [13,12,10,18,16,18,16,10].map(function(w) { return { wch: w }; });
+  XLSX.utils.book_append_sheet(wb, wi, "Inward");
+
+  /* Sheet 2: Outward (all dispatch records combined) */
+  var wo = XLSX.utils.aoa_to_sheet([OH].concat(outR.map(function(r) {
+    return [r.date,r.time,r.enteredBy,r.partyName,r.billNo,r.vehicleNo,
+            r.machine,r.product,r.thickness,r.color,r.materialQuantity];
+  })));
+  wo["!cols"] = OW;
+  XLSX.utils.book_append_sheet(wb, wo, "Outward");
+
+  /* Sheets 3–5: One per person — skip if they have no entries */
+  PEOPLE.forEach(function(name) {
+    var recs = outR.filter(function(r) { return r.enteredBy === name; });
+    if (!recs.length) return;
+    var ws = XLSX.utils.aoa_to_sheet([OH].concat(recs.map(function(r) {
+      return [r.date,r.time,r.enteredBy,r.partyName,r.billNo,r.vehicleNo,
+              r.machine,r.product,r.thickness,r.color,r.materialQuantity];
+    })));
+    ws["!cols"] = OW;
+    XLSX.utils.book_append_sheet(wb, ws, ("Dispatch - " + name).slice(0,31));
+  });
+
+  /* Sheet 6: Combined — matches the same logic as the Google Sheets "Combined" tab.
+     Rules:
+       - All Subhash entries
+       - All Anandaram entries
+       - Mukesh entries only where vehicle is NOT in MUKESH_VEHICLES
+     Sorted by date (oldest first — same as the Sheets Combined tab). */
+  /* Combined sheet filter — matches Google Sheets Combined tab rules:
+     Guard: never included. Mukesh: only non-own-vehicles. Others: always. */
+  var combinedRecs = outR.filter(function(r) {
+    if (r.enteredBy === "Guard") return false;
+    if (r.enteredBy === "Mukesh") {
+      return MUKESH_VEHICLES.indexOf(r.vehicleNo) === -1;
+    }
+    return true;
+  });
+  /* Sort by date — parse Indian date format DD/MM/YYYY for correct comparison */
+  combinedRecs = combinedRecs.slice().sort(function(a, b) {
+    /* parseDate converts "24/02/2026" → a Date object so dates sort correctly */
+    function parseDate(ds) {
+      if (!ds) return new Date(0);
+      var p = ds.split("/");
+      /* p[0]=day, p[1]=month, p[2]=year — month is 0-indexed in JS Date */
+      return new Date(p[2], p[1]-1, p[0]);
+    }
+    return parseDate(a.date) - parseDate(b.date);
+  });
+  if (combinedRecs.length) {
+    var wc = XLSX.utils.aoa_to_sheet([OH].concat(combinedRecs.map(function(r) {
+      return [r.date,r.time,r.enteredBy,r.partyName,r.billNo,r.vehicleNo,
+              r.machine,r.product,r.thickness,r.color,r.materialQuantity];
+    })));
+    wc["!cols"] = OW;
+    XLSX.utils.book_append_sheet(wb, wc, "Combined");
+  }
+
+  /* ── Daily Summary sheet ──
+     Groups Combined records by Date + Machine + Product + Thickness + Color.
+     Each unique combination gets one row showing the total quantity dispatched.
+     Sorted by Date then Machine for easy reading. */
+  if (combinedRecs.length) {
+    /* Build a lookup map: key = "Date|Machine|Product|Thickness|Color" → total qty */
+    var summaryMap = {};
+    combinedRecs.forEach(function(r) {
+      var key = [r.date, r.machine, r.product, r.thickness, r.color].join("|");
+      summaryMap[key] = (summaryMap[key] || 0) + (Number(r.materialQuantity) || 0);
+    });
+    /* Convert the map to an array of rows, sorted by date then machine */
+    var summaryRows = Object.keys(summaryMap).map(function(k) {
+      var parts = k.split("|");
+      return [parts[0], parts[1], parts[2], parts[3], parts[4], summaryMap[k]];
+    }).sort(function(a, b) {
+      /* Sort by date (col 0), then machine (col 1) */
+      function parseDate(ds) {
+        if (!ds) return new Date(0);
+        var p = ds.split("/");
+        return new Date(p[2], p[1]-1, p[0]);
+      }
+      var d = parseDate(a[0]) - parseDate(b[0]);
+      if (d !== 0) return d;
+      return (a[1] || "").localeCompare(b[1] || "");
+    });
+    var SH = ["Date","Machine","Product","Thickness","Color","Total Dispatched"];
+    var SW = [12,18,22,13,14,16].map(function(w) { return { wch: w }; });
+    var wsum = XLSX.utils.aoa_to_sheet([SH].concat(summaryRows));
+    wsum["!cols"] = SW;
+    XLSX.utils.book_append_sheet(wb, wsum, "Daily Summary");
+  }
+
+  /* Download the file — filename includes today's date */
+  XLSX.writeFile(wb, "Helix_Register_" + new Date().toISOString().slice(0,10) + ".xlsx");
+  showMsg("✓ Excel file downloaded!");
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 13 — INITIALISATION
+   Runs once when the browser has fully loaded the page.
+   Sets up the Apps Script code box, adds the first dispatch row,
+   registers the service worker, and configures PWA install prompt.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+window.onload = function() {
+
+  /* ── Fill the Apps Script code box ──
+     This is the code the user must paste into their Google Sheet's
+     Apps Script editor to enable the cloud sync feature.
+     It creates/appends to sheet tabs by name on every POST call. */
+  g("codebox").textContent = "// \u2500\u2500 Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nvar SHEET_ID = \"1bnYCSCMFb6FeU1pPaE66smxYu4xGRUO_Pq2egxIpskM\";\n\nvar DISPATCH_SHEETS = [\n  \"Dispatch - Mukesh\",\n  \"Dispatch - Subhash\",\n  \"Dispatch - Anandaram\",\n  \"Dispatch - Guard\"\n];\n\nvar MUKESH_VEHICLES = [\n  \"RJ 19 RF 8056\",\n  \"RJ 07 RA 9480\",\n  \"RJ 19 GJ 9279\",\n  \"RJ 19 GG 2398\"\n];\n\nvar OH = [\"Date\",\"Time\",\"Entered By\",\"Party Name\",\"Bill/Challan Number\",\n          \"Vehicle No.\",\"Machine\",\"Product\",\"Thickness\",\"Color\",\"Material Quantity\"];\n\n\n// \u2500\u2500 doGet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doGet(e) {\n  return ContentService\n    .createTextOutput(JSON.stringify({status:\"ready\"}))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n\n\n// \u2500\u2500 doPost \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doPost(e) {\n  var ss   = SpreadsheetApp.openById(SHEET_ID);\n  var data = JSON.parse(e.postData.contents);\n\n  // Test ping\n  if (data.testOnly) {\n    return ok({test:true});\n  }\n\n  // \u2500\u2500 writeAll: atomic multi-sheet write (new format) \u2500\u2500\n  if (data.action === \"writeAll\") {\n    var summaryRows = 0;\n    data.sheets.forEach(function(s) {\n      appendToSheet(ss, s.sheet, s.headers, s.rows);\n      if (s.rebuildSummaryAfter) {\n        summaryRows = rebuildAll(ss);\n      }\n    });\n    return ok({rowId: data.rowId, summaryRows: summaryRows});\n  }\n\n  // \u2500\u2500 Legacy single-sheet write (backwards compatible) \u2500\u2500\n  appendToSheet(ss, data.sheet, data.headers, data.rows);\n  if (data.sortByDate) sortSheet(ss, data.sheet);\n  var summaryRows = 0;\n  if (data.rebuildSummaryAfter) summaryRows = rebuildAll(ss);\n  return ok({added: data.rows ? data.rows.length : 0, summaryRows: summaryRows});\n}\n\n\n// \u2500\u2500 appendToSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Appends rows to a named sheet. Creates the sheet with headers if new.\n// NEVER creates a blank sheet \u2014 only creates if there are rows to write.\nfunction appendToSheet(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return;  // nothing to write \u2014 exit immediately\n\n  var sh = ss.getSheetByName(name);\n  if (!sh) {\n    sh = ss.insertSheet(name);\n    sh.appendRow(headers);\n    formatHeader(sh, headers.length);\n  } else if (sh.getLastRow() === 0) {\n    sh.appendRow(headers);\n    formatHeader(sh, headers.length);\n  }\n\n  rows.forEach(function(r) { sh.appendRow(r); });\n}\n\n\n// \u2500\u2500 sortSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction sortSheet(ss, name) {\n  var sh = ss.getSheetByName(name);\n  if (!sh || sh.getLastRow() < 3) return;\n  sh.getRange(2, 1, sh.getLastRow()-1, sh.getLastColumn())\n    .sort({column:1, ascending:true});\n}\n\n\n// \u2500\u2500 formatHeader \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction formatHeader(sh, ncols) {\n  var hdr = sh.getRange(1, 1, 1, ncols);\n  hdr.setFontWeight(\"bold\").setBackground(\"#2c3b48\").setFontColor(\"#f7b810\");\n  sh.setFrozenRows(1);\n  sh.setColumnWidths(1, ncols, 140);\n}\n\n\n// \u2500\u2500 rebuildAll \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Reads all Dispatch sheets, rebuilds Outward + Combined + Daily Summary.\n// NEVER creates a sheet unless there is data to put in it.\nfunction rebuildAll(ss) {\n  var tz = Session.getScriptTimeZone();\n\n  // Collect all rows from every Dispatch sheet\n  var allRows = [];\n  DISPATCH_SHEETS.forEach(function(sName) {\n    var sh = ss.getSheetByName(sName);\n    if (!sh || sh.getLastRow() < 2) return;\n    var rows = sh.getRange(2, 1, sh.getLastRow()-1, sh.getLastColumn()).getValues();\n    rows.forEach(function(row) {\n      var d = row[0];\n      row[0] = (d instanceof Date && !isNaN(d))\n               ? Utilities.formatDate(d, tz, \"dd/MM/yyyy\")\n               : String(d).trim();\n      row[2] = String(row[2]).trim();\n      allRows.push(row);\n    });\n  });\n\n  if (allRows.length === 0) return 0;  // no data at all \u2014 do nothing\n\n  // Sort by date ascending\n  allRows.sort(function(a, b) {\n    function pd(s) {\n      var p = String(s).split(\"/\");\n      return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);\n    }\n    return pd(a[0]) - pd(b[0]);\n  });\n\n  // Rebuild Outward\n  writeSheet(ss, \"Outward\", OH, allRows);\n\n  // Rebuild Combined\n  var combinedRows = allRows.filter(function(row) {\n    var who = row[2];\n    var veh = String(row[5]).trim();\n    if (who === \"Guard\")  return false;\n    if (who === \"Mukesh\") return MUKESH_VEHICLES.indexOf(veh) === -1;\n    return true;\n  });\n  if (combinedRows.length > 0) writeSheet(ss, \"Combined\", OH, combinedRows);\n\n  // Rebuild Daily Summary\n  if (combinedRows.length === 0) return 0;\n\n  var tot = {};\n  combinedRows.forEach(function(row) {\n    var d   = row[0];\n    var ds  = (d instanceof Date && !isNaN(d))\n              ? Utilities.formatDate(d, tz, \"dd-MM-yyyy\")\n              : String(d).trim().replace(/\\//g, \"-\");\n    var mac = String(row[6]||\"\").trim();\n    var pro = String(row[7]||\"\").trim();\n    var thk = String(row[8]||\"\").trim();\n    var col = String(row[9]||\"\").trim();\n    var qty = Number(row[10])||0;\n    if (!mac || !ds) return;\n    var k = ds+\"|\"+mac+\"|\"+pro+\"|\"+thk+\"|\"+col;\n    tot[k] = (tot[k]||0) + qty;\n  });\n\n  var SH = [\"Date\",\"Machine\",\"Product\",\"Thickness\",\"Color\",\"Total Dispatched\"];\n  var sRows = Object.keys(tot).map(function(k) {\n    var p = k.split(\"|\");\n    return [p[0],p[1],p[2],p[3],p[4],tot[k]];\n  }).sort(function(a,b) {\n    function pd(s) {\n      var p = String(s).split(\"-\");\n      return p.length===3 ? new Date(p[2],p[1]-1,p[0]) : new Date(0);\n    }\n    var d = pd(a[0])-pd(b[0]);\n    return d !== 0 ? d : String(a[1]).localeCompare(String(b[1]));\n  });\n\n  writeSheet(ss, \"Daily Summary\", SH, sRows);\n  return sRows.length;\n}\n\n\n// \u2500\u2500 writeSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Clears and rewrites a sheet. ONLY creates the sheet if rows.length > 0.\nfunction writeSheet(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return;  // NEVER create blank sheets\n\n  var sh = ss.getSheetByName(name);\n  if (!sh) sh = ss.insertSheet(name);\n  sh.clearContents();\n\n  var nc       = headers.length;\n  var safeRows = rows.map(function(row) {\n    var r = row.slice(0, nc);\n    while (r.length < nc) r.push(\"\");\n    return r;\n  });\n\n  var data = [headers].concat(safeRows);\n  sh.getRange(1, 1, data.length, nc).setValues(data);\n  formatHeader(sh, nc);\n}\n\n\n// \u2500\u2500 manualRebuild \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction manualRebuild() {\n  var ss    = SpreadsheetApp.getActiveSpreadsheet();\n  var count = rebuildAll(ss);\n  SpreadsheetApp.getUi().alert(\"Rebuild complete. Daily Summary: \" + count + \" rows.\");\n}\n\n\n// \u2500\u2500 onEdit trigger \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction onEdit(e) {\n  try {\n    var name    = e.range.getSheet().getName();\n    var watched = DISPATCH_SHEETS.concat([\"Outward\",\"Combined\"]);\n    if (watched.indexOf(name) === -1) return;\n    rebuildAll(SpreadsheetApp.getActiveSpreadsheet());\n  } catch(err) {}\n}\n\n\n// \u2500\u2500 Helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction ok(extra) {\n  var obj = {status:\"ok\"};\n  Object.keys(extra).forEach(function(k){ obj[k] = extra[k]; });\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}";
+
+  /* ── Show mobile-only Sheets setup button ── */
+  if (window.innerWidth <= 700) g("mob-cfg").style.display = "block";
+
+  /* ── Initialise app state ── */
+  upd();       /* set count badges */
+  addOutRow(); /* pre-add first dispatch row */
+  syncSt(scUrl ? "ok" : "loc"); /* set sync dot */
+
+  /* ── Register PWA Service Worker ──
+     This makes the app work offline and installable.
+     Only works when served over HTTPS (not from a local file). */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js")
+      .then(function(reg) { console.log("[PWA] SW registered:", reg.scope); })
+      .catch(function(e)  { console.warn("[PWA] SW failed:", e); });
+  }
+
+  /* ── PWA Install Prompt ──
+     Chrome on Android fires this event when the app can be installed.
+     We capture it and show our branded banner after a short delay. */
+  var deferredPrompt = null;
+  window.addEventListener("beforeinstallprompt", function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    /* Show install banner after 2 seconds */
+    setTimeout(function() {
+      g("install-banner").style.display = "flex";
+    }, 2000);
+  });
+
+  /* When the user taps our Install button */
+  g("install-btn").addEventListener("click", function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function(c) {
+      if (c.outcome === "accepted") showMsg("App installed! Open from home screen anytime.","inf");
+      deferredPrompt = null;
+      g("install-banner").style.display = "none";
+    });
+  });
+
+  /* If already running as an installed PWA, hide the install banner */
+  if (window.matchMedia("(display-mode: standalone)").matches) {
+    g("install-banner").style.display = "none";
+  }
+
+  /* ── Online / Offline Detection ──
+     Shows the red bar when internet is lost.
+     Hides it when connection is restored. */
+  function checkOnline() {
+    g("offline-bar").style.display = navigator.onLine ? "none" : "block";
+    if (!navigator.onLine) {
+      syncSt("err");
+    } else {
+      /* Back online — immediately flush any queued entries */
+      var pending = qLoad().length;
+      if (pending > 0) {
+        showMsg("Connection restored — syncing " + pending + " pending entr" + (pending>1?"ies":"y") + "…", "inf");
+        runSyncQueue();
+      } else if (scUrl) {
+        syncSt("ok");
+      }
+    }
+  }
+  window.addEventListener("online",  checkOnline);
+  window.addEventListener("offline", checkOnline);
+  checkOnline();
+
+  /* Retry any pending queue items every 30 seconds */
+  setInterval(runSyncQueue, 30000);
+
+  /* On startup: show badge and immediately try to sync any queued entries */
+  updateQueueBadge();
+  setTimeout(runSyncQueue, 2000);  /* slight delay so app finishes loading first */
+};
+
+</script>
+</body>
+</html>
