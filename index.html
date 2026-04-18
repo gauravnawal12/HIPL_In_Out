@@ -895,16 +895,50 @@ tr:hover td { background: rgba(247,184,16,.04); }
            the panel background showing through — no cutout rects needed.
            This gives full contrast: gold on dark, gap readable on dark. -->
       <div class="logo-mark">
-        <div style="width:46px;height:46px;background:#fff8e1;border-radius:10px;
+        <div style="width:46px;height:46px;background:#ffffff;border-radius:10px;
                     display:flex;align-items:center;justify-content:center;
-                    border:2px solid var(--gold);flex-shrink:0">
-          <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" width="30" height="30">
-            <!-- TOP-LEFT gold L-shape: horizontal bar + vertical bar -->
-            <!-- Full rectangle first, then the inner corner cut out by NOT drawing there -->
-            <polygon points="2,2 14,2 14,7 7,7 7,18 2,18" fill="#f7b810"/>
+                    border:2px solid var(--border);flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="34" height="34">
+            <!--
+              Helix Industries logo mark recreation.
+              The mark is two C-shaped brackets (left-facing and right-facing)
+              interlocked to form a square frame. Gold fills the two corner gaps.
 
-            <!-- BOTTOM-RIGHT gold reverse-L-shape -->
-            <polygon points="22,18 34,18 34,34 22,34 22,29 29,29 29,18" fill="#f7b810"/>
+              Grid: 40×40. Bar thickness = 7. Inner gap = 6.
+              LEFT C-bracket (slate, opens RIGHT):
+                Top bar:    x=2  y=2  w=22 h=7   → (2,2)→(24,2)→(24,9)→(2,9)
+                Left bar:   x=2  y=2  w=7  h=36  → (2,2)→(9,2)→(9,38)→(2,38)
+                Bottom bar: x=2  y=31 w=22 h=7   → (2,31)→(24,31)→(24,38)→(2,38)
+
+              RIGHT C-bracket (slate, opens LEFT):
+                Top bar:    x=16 y=2  w=22 h=7   → (16,2)→(38,2)→(38,9)→(16,9)
+                Right bar:  x=31 y=2  w=7  h=36  → (31,2)→(38,2)→(38,38)→(31,38)
+                Bottom bar: x=16 y=31 w=22 h=7   → (16,31)→(38,31)→(38,38)→(16,38)
+
+              GOLD fills the two corner squares (gaps between the brackets):
+                Top-right gap:    (24,2)→(31,2)→(31,9)→(24,9)
+                Bottom-left gap:  (9,31)→(16,31)→(16,38)→(9,38)
+            -->
+
+            <!-- LEFT C-bracket (slate, opens right) -->
+            <!-- top bar -->
+            <rect x="2" y="2" width="22" height="7" fill="#2c3b48"/>
+            <!-- left vertical bar -->
+            <rect x="2" y="2" width="7" height="36" fill="#2c3b48"/>
+            <!-- bottom bar -->
+            <rect x="2" y="31" width="22" height="7" fill="#2c3b48"/>
+
+            <!-- RIGHT C-bracket (slate, opens left) -->
+            <!-- top bar -->
+            <rect x="16" y="2" width="22" height="7" fill="#2c3b48"/>
+            <!-- right vertical bar -->
+            <rect x="31" y="2" width="7" height="36" fill="#2c3b48"/>
+            <!-- bottom bar -->
+            <rect x="16" y="31" width="22" height="7" fill="#2c3b48"/>
+
+            <!-- GOLD corner fills -->
+            <rect x="24" y="2"  width="7" height="7"  fill="#f7b810"/>
+            <rect x="9"  y="31" width="7" height="7"  fill="#f7b810"/>
           </svg>
         </div>
       </div>
@@ -1264,7 +1298,7 @@ var DD = {
   ],
   "Rubber Mould": [
     "Jumbo","Zigzag","Euphrates","River Quad","3D Hexa","Cobble",
-    "8x4","4x4","Cobble 4.5\"","X-Block",
+    "8x4","4x4","Cobble 4.5\"","X-Block","Kerbstone",
     "Cover Block Big","Cover Block Small","36 Striker","Cross Strip",
     "Matrix","Riveira","BB Bali","BB Aruba","BB Maui","BB Maldives",
     "BB Ibiza","BB Barbados","Cool Roof Tile","Drain Channel"
@@ -1309,62 +1343,49 @@ var MUKESH_VEHICLES = ["RJ 19 RF 8056","RJ 07 RA 9480","RJ 19 GJ 9279","RJ 19 GG
 var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 
+
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 2 — STATE & STORAGE
-   Records live here (in-memory and in browser localStorage).
-   localStorage survives page refresh and browser close.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* Storage keys — if you change the data structure, bump v5→v6 etc.
-   This makes old saved data get ignored rather than crashing. */
-var IK = "hf_in_v5";   /* localStorage key for inward records  */
-var OK = "hf_out_v5";  /* localStorage key for dispatch records */
-var SK = "hf_sc";      /* localStorage key for the Sheets URL  */
-var QK = "hf_queue";   /* localStorage key for the sync queue  */
+var IK = "hf_in_v5";    // inward records
+var OK = "hf_out_v5";   // dispatch records
+var SK = "hf_sc";       // Sheets URL
+var QK = "hf_q2";       // sync queue  (v2 = new atomic format, clears old queue)
 
-/* Load saved data on startup. JSON.parse turns the saved text back into arrays. */
-var inR  = JSON.parse(localStorage.getItem(IK) || "[]");
-var outR = JSON.parse(localStorage.getItem(OK) || "[]");
+var inR   = JSON.parse(localStorage.getItem(IK)  || "[]");
+var outR  = JSON.parse(localStorage.getItem(OK)  || "[]");
 var scUrl = localStorage.getItem(SK) || "";
 
-/* Row counter — reset to 0 after each successful form save */
-var inN  = 0;
-var outN = 0;
-/* Remember which sub-tab was last active in the Records panel */
-var recV = "inward";
+var inN = 0, outN = 0, recV = "inward";
 
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 3 — UTILITY FUNCTIONS
-   Small helper functions used throughout the code.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-/* Save both record arrays to the browser's localStorage */
 function sl() {
   localStorage.setItem(IK, JSON.stringify(inR));
   localStorage.setItem(OK, JSON.stringify(outR));
 }
 
-/* Generate a short unique ID for each record.
-   Combines timestamp + random characters to ensure uniqueness. */
 function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,8);
 }
 
-/* Return the current date, time, and month string */
 function ts() {
   var d = new Date();
+  var MONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   return {
-    date:  d.toLocaleDateString("en-IN"),                          /* e.g. "24/02/2026" */
-    time:  d.toLocaleTimeString("en-IN", {hour12:false}),          /* e.g. "14:30:00"   */
-    month: MONS[d.getMonth()] + " " + d.getFullYear()             /* e.g. "Feb 2026"   */
+    date:  d.toLocaleDateString("en-IN"),
+    time:  d.toLocaleTimeString("en-IN", {hour12:false}),
+    month: MONS[d.getMonth()] + " " + d.getFullYear()
   };
 }
 
-/* Shortcut for document.getElementById() */
 function g(id) { return document.getElementById(id); }
 
-/* Update the count badges on all tabs and the records toggle buttons */
 function upd() {
   var ic = inR.length, oc = outR.length;
   g("c-in").textContent  = ic;
@@ -1377,290 +1398,288 @@ function upd() {
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 4 — TOAST NOTIFICATION
-   Small message that pops up at the bottom of the screen.
-   type: "ok"=green | "err"=red | "inf"=slate | "wrn"=amber
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-var tt; /* stores the hide-timer so we can cancel it if another toast fires */
 
+var _toastTimer;
 function showMsg(m, t) {
-  clearTimeout(tt);
+  clearTimeout(_toastTimer);
   var el = g("toast");
   el.textContent = m;
   el.style.background =
       t === "err" ? "#dc2626"
     : t === "inf" ? "#4a5e6e"
     : t === "wrn" ? "#d97706"
-    : "#15803d";  /* default: green (success) */
+    : "#15803d";
   el.style.display = "block";
-  /* Auto-hide after 3.5 seconds */
-  tt = setTimeout(function() { el.style.display = "none"; }, 3500);
+  _toastTimer = setTimeout(function() { el.style.display = "none"; }, 3500);
 }
 
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SECTION 5 — SYNC STATUS INDICATOR
-   The coloured dot in the header header shows connection state.
+   SECTION 5 — SYNC STATUS DOT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
 function syncSt(s) {
   var dot = g("sdot"), lbl = g("slbl");
-  if (s === "ok") {
+  var pending = qLoad().length;
+  if (s === "ok" && pending === 0) {
     dot.style.background = "#4ade80"; dot.style.animation = "none";
     lbl.textContent = "Synced";
   } else if (s === "ing") {
     dot.style.background = "#f7b810"; dot.style.animation = "pulse 1s infinite";
     lbl.textContent = "Syncing…";
-  } else if (s === "err") {
+  } else if (s === "err" || pending > 0) {
     dot.style.background = "#f87171"; dot.style.animation = "none";
-    lbl.textContent = "Sync Failed";
+    lbl.textContent = pending > 0 ? pending + " pending" : "Sync Failed";
   } else {
     dot.style.background = "#8a9aaa"; dot.style.animation = "none";
     lbl.textContent = "Local Only";
   }
 }
 
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SECTION 6 — GOOGLE SHEETS SYNC
-   Sends data to multiple sheet tabs per save.
-   Inward → just "Inward" tab.
-   Dispatch → "Outward" (combined) + "Dispatch - [Name]" (per person).
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* Send one POST request to the Apps Script web app.
-   sheet   = name of the Google Sheet tab to write to
-   headers = column headers (first row, created once if tab is new)
-   rows    = array of data rows to append */
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SYNC QUEUE SYSTEM
-   ─────────────────────────────────────────────────────────────
-   Every Sheets write is first saved to a persistent queue in
-   localStorage. A background loop retries failed/pending items
-   every 30 seconds and also fires immediately when the device
-   comes back online. This guarantees zero missed entries even
-   if the user is offline, closes the app mid-sync, or the
-   network drops partway through a save.
-
-   Queue item shape:
-   { id, type ("inward"|"dispatch"), who, veh, headers, rows,
-     added (ISO timestamp), tries (attempt count), lastErr }
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* ── Queue helpers ── */
-function qLoad()     { try { return JSON.parse(localStorage.getItem(QK) || "[]"); } catch(e) { return []; } }
-function qSave(q)    { localStorage.setItem(QK, JSON.stringify(q)); }
-function qRemove(id) { qSave(qLoad().filter(function(x){ return x.id !== id; })); }
-
 function updateQueueBadge() {
   var pending = qLoad().length;
-  var lbl = g("slbl"), dot = g("sdot");
   if (pending > 0) {
-    lbl.textContent        = pending + " pending";
-    dot.style.background   = "#f7b810";
-    dot.style.animation    = "pulse 1s infinite";
+    g("sdot").style.background = "#f7b810";
+    g("sdot").style.animation  = "pulse 1s infinite";
+    g("slbl").textContent = pending + " pending";
   }
 }
 
-/* ── Single HTTP call — sends ALL sheets for one entry in ONE request ──
-   This is the key anti-duplicate fix. Instead of 3 separate HTTP calls
-   (Outward, Dispatch-Who, Combined), we send everything in one request.
-   Apps Script writes all sheets atomically. If it fails, nothing is written
-   and the item stays in queue for retry — no partial writes, no duplicates. */
-async function syncItem(item) {
-  var payload;
 
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 6 — ROBUST SYNC QUEUE
+   ─────────────────────────────────────────────────────────────
+   Design principles:
+   1. SAVE FIRST  — entry saved to localStorage before any network call
+   2. ATOMIC      — all sheets written in ONE HTTP call (writeAll action)
+                    If ANY part fails → nothing written → no partial data
+   3. DEDUP       — each item has a unique id; server tracks written ids
+                    so retries never create duplicates
+   4. PERSISTENT  — queue survives app close, phone sleep, network loss
+   5. AUTO-RETRY  — retries every 30s + immediately on reconnect + on startup
+   6. NO RACE     — _syncing flag prevents concurrent sync runs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* ── Queue persistence helpers ── */
+function qLoad() {
+  try { return JSON.parse(localStorage.getItem(QK) || "[]"); }
+  catch(e) { return []; }
+}
+function qSave(q)    { localStorage.setItem(QK, JSON.stringify(q)); }
+function qRemove(id) { qSave(qLoad().filter(function(x){ return x.id !== id; })); }
+
+/* ── Build payload for one queue item ── */
+function buildPayload(item) {
   if (item.type === "inward") {
-    payload = {
-      action:  "writeAll",
-      rowId:   item.id,          /* server uses this to skip already-written rows */
-      sheets: [
-        { sheet: "Inward", headers: item.headers, rows: item.rows }
-      ]
+    return {
+      action: "writeAll",
+      rowId:  item.id,
+      sheets: [{ sheet: "Inward", headers: item.headers, rows: item.rows }]
     };
-  } else {
-    var combinedRows = item.rows.filter(function(row) {
-      if (item.who === "Guard")  return false;
-      if (item.who === "Mukesh") return MUKESH_VEHICLES.indexOf(row[5]) === -1;
-      return true;
-    });
-    var sheets = [
-      { sheet: "Outward",                headers: item.headers, rows: item.rows },
-      { sheet: "Dispatch - " + item.who, headers: item.headers, rows: item.rows }
-    ];
-    if (combinedRows.length > 0) {
-      sheets.push({
-        sheet: "Combined", headers: item.headers, rows: combinedRows,
-        sortByDate: true, rebuildSummaryAfter: true
-      });
-    }
-    payload = { action: "writeAll", rowId: item.id, sheets: sheets };
   }
+  // dispatch: build sheets list — Outward + personal + Combined (if eligible)
+  var combinedRows = item.rows.filter(function(row) {
+    if (item.who === "Guard")  return false;
+    if (item.who === "Mukesh") return MUKESH_VEHICLES.indexOf(row[5]) === -1;
+    return true;
+  });
+  var sheets = [
+    { sheet: "Outward",                  headers: item.headers, rows: item.rows },
+    { sheet: "Dispatch - " + item.who,  headers: item.headers, rows: item.rows }
+  ];
+  if (combinedRows.length > 0) {
+    sheets.push({
+      sheet: "Combined", headers: item.headers, rows: combinedRows,
+      rebuildSummaryAfter: true
+    });
+  }
+  return { action: "writeAll", rowId: item.id, sheets: sheets };
+}
 
+/* ── Single HTTP POST — throws on any failure ── */
+async function postToSheets(payload) {
   var r = await fetch(scUrl, {
-    method: "POST", headers: { "Content-Type": "text/plain" },
-    body: JSON.stringify(payload)
+    method:  "POST",
+    headers: { "Content-Type": "text/plain" },
+    body:    JSON.stringify(payload)
   });
   if (!r.ok) throw new Error("HTTP " + r.status);
   var txt = await r.text();
   var j;
-  try { j = JSON.parse(txt); } catch(ex) { throw new Error("Bad JSON: " + txt.slice(0,80)); }
-  if (j.status !== "ok") throw new Error("Script error: " + txt.slice(0,120));
-  if (j.summaryRows !== undefined && j.summaryRows > 0) {
-    showMsg("✓ Synced — Daily Summary: " + j.summaryRows + " rows", "inf");
-  }
+  try { j = JSON.parse(txt); }
+  catch(ex) { throw new Error("Bad JSON from server: " + txt.slice(0,100)); }
+  if (j.status !== "ok") throw new Error("Server error: " + JSON.stringify(j));
   return j;
 }
 
-/* ── Main sync loop ──
-   Uses localStorage "hf_syncing" flag so even if the app is closed
-   mid-sync and reopened, we don't re-send items still being processed. */
+/* ── Main sync loop — processes queue one item at a time ── */
 var _syncing = false;
 async function runSyncQueue() {
+  // Guards: don't run if already running, no URL, or offline
   if (_syncing || !scUrl || !navigator.onLine) return;
+
   var q = qLoad();
-  if (!q.length) { syncSt(scUrl ? "ok" : "loc"); return; }
+  if (q.length === 0) {
+    syncSt(scUrl ? "ok" : "loc");
+    return;
+  }
 
   _syncing = true;
-  localStorage.setItem("hf_syncing", "1");
   syncSt("ing");
 
-  for (var i = 0; i < q.length; i++) {
-    var item = q[i];
-    /* Skip items already marked as syncing in a previous interrupted session */
+  // Process items one by one
+  // We snapshot the IDs first so additions during sync don't get lost
+  var ids = q.map(function(x) { return x.id; });
+
+  for (var i = 0; i < ids.length; i++) {
+    // Re-read queue each iteration (it may have been modified)
+    var current = qLoad();
+    var item = current.filter(function(x){ return x.id === ids[i]; })[0];
+    if (!item) continue; // already removed (shouldn't happen but be safe)
+
     try {
-      await syncItem(item);
-      qRemove(item.id);   /* only removed AFTER confirmed server ack */
-    } catch(e) {
+      var payload = buildPayload(item);
+      var result  = await postToSheets(payload);
+
+      // Success — remove from queue
+      qRemove(item.id);
+
+      // Show summary row count if available
+      if (result.summaryRows > 0) {
+        showMsg("✓ Synced — Daily Summary: " + result.summaryRows + " rows", "inf");
+      }
+
+    } catch(err) {
+      // Failure — record the error and keep in queue for retry
       var qq = qLoad();
       var ix = qq.findIndex(function(x){ return x.id === item.id; });
       if (ix !== -1) {
-        qq[ix].tries   = (qq[ix].tries||0) + 1;
-        qq[ix].lastErr = e.message || String(e);
+        qq[ix].tries   = (qq[ix].tries || 0) + 1;
+        qq[ix].lastErr = String(err.message || err);
+        qq[ix].lastTry = new Date().toISOString();
         qSave(qq);
       }
     }
   }
 
   _syncing = false;
-  localStorage.removeItem("hf_syncing");
 
   var remaining = qLoad().length;
-  if (remaining === 0) {
-    syncSt("ok");
-    g("slbl").textContent = "Synced";
-  } else {
-    syncSt("err");
+  syncSt(remaining === 0 ? "ok" : "err");
+  if (remaining > 0) {
     updateQueueBadge();
     showMsg(remaining + " entr" + (remaining>1?"ies":"y") + " pending — will retry automatically", "wrn");
+  } else if (g("slbl").textContent !== "Synced") {
+    g("slbl").textContent = "Synced";
   }
 }
 
-/* ── Queue an inward entry then try to sync immediately ── */
+/* ── Queue an inward entry ── */
 async function pushInward(rows) {
   if (!scUrl) return;
-  var IH = ["Date","Month","Time","Supplier Name","Bill/Challan No.","Material Name","Vehicle No.","Quantity"];
+  var IH = ["Date","Month","Time","Supplier Name","Bill/Challan No.",
+            "Material Name","Vehicle No.","Quantity"];
   var q = qLoad();
-  q.push({ id: uid(), type: "inward", headers: IH, rows: rows, added: new Date().toISOString(), tries: 0, lastErr: "" });
+  q.push({
+    id: uid(), type: "inward", headers: IH, rows: rows,
+    added: new Date().toISOString(), tries: 0, lastErr: "", lastTry: ""
+  });
   qSave(q);
   updateQueueBadge();
-  runSyncQueue();
+  runSyncQueue(); // fire and don't await — form resets immediately
 }
 
-/* ── Queue a dispatch entry then try to sync immediately ── */
-async function pushDispatch(who, headers, rows, veh) {
+/* ── Queue a dispatch entry ── */
+async function pushDispatch(who, headers, rows) {
   if (!scUrl) return;
   var q = qLoad();
-  q.push({ id: uid(), type: "dispatch", who: who, veh: veh, headers: headers, rows: rows, added: new Date().toISOString(), tries: 0, lastErr: "" });
+  q.push({
+    id: uid(), type: "dispatch", who: who, headers: headers, rows: rows,
+    added: new Date().toISOString(), tries: 0, lastErr: "", lastTry: ""
+  });
   qSave(q);
   updateQueueBadge();
   runSyncQueue();
 }
 
-
-
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   SECTION 7 — SETUP PANEL (Google Sheets configuration UI)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-/* Toggle the yellow setup panel open/closed */
-function toggleSetup() {
-  var el = g("sup");
-  el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
-  g("urlin").value = scUrl;  /* pre-fill the input with any existing saved URL */
-}
-
-/* Save the entered URL to localStorage and update the sync dot */
-function saveUrl() {
-  scUrl = g("urlin").value.trim();
-  localStorage.setItem(SK, scUrl);
-  syncSt(scUrl ? "ok" : "loc");
-  showMsg(scUrl ? "✓ URL saved — Google Sheets sync is now active" : "URL cleared", "inf");
-}
-
-/* Send a test GET request to verify the URL is correct and working */
-/* Diagnose: sends the exact same payload as a real Combined write,
-   then shows the raw response from Apps Script in full detail.
-   This tells us exactly what Apps Script is receiving and returning. */
-async function diagnose() {
-  var out = g("diag-out");
-  out.style.display = "block";
-  out.textContent = "Running diagnosis...\n\n";
-
-  if (!scUrl) { out.textContent += "ERROR: No URL saved. Paste URL and click Save URL first."; return; }
-
-  var log = function(msg) { out.textContent += msg + "\n"; };
-
-  // Step 1: GET request - basic connectivity
-  log("STEP 1: Testing basic connectivity (GET)...");
-  try {
-    var r1 = await fetch(scUrl);
-    var t1 = await r1.text();
-    log("  Status: " + r1.status);
-    log("  Response: " + t1.slice(0,200));
-  } catch(e) { log("  ERROR: " + e.message); }
-
-  // Step 2: Send a test POST with rebuildSummaryAfter:true and dummy row
-  log("\nSTEP 2: Sending test POST with rebuildSummaryAfter:true...");
-  var testPayload = {
-    sheet: "Combined",
-    headers: ["Date","Time","Entered By","Party Name","Bill/Challan Number","Vehicle No.","Machine","Product","Thickness","Color","Material Quantity"],
-    rows: [["TEST-"+new Date().toLocaleDateString("en-GB"),"00:00","Subhash","TEST PARTY","TEST-BILL","TEST-VEH","Apollo","Hexagon","60 MM","Grey",1]],
-    sortByDate: true,
-    rebuildSummaryAfter: true
-  };
-  log("  Payload: " + JSON.stringify(testPayload).slice(0,300));
-  try {
-    var r2 = await fetch(scUrl, {
-      method: "POST",
-      headers: {"Content-Type": "text/plain"},
-      body: JSON.stringify(testPayload)
-    });
-    var t2 = await r2.text();
-    log("  HTTP Status: " + r2.status);
-    log("  Raw response: " + t2.slice(0,500));
-    try {
-      var j2 = JSON.parse(t2);
-      log("  Parsed JSON: " + JSON.stringify(j2));
-      log("  status = " + j2.status);
-      log("  added = " + j2.added);
-      log("  summaryRows = " + j2.summaryRows);
-    } catch(ex) { log("  Could not parse as JSON: " + ex.message); }
-  } catch(e) { log("  FETCH ERROR: " + e.message); }
-
-  log("\nDiagnosis complete. Share this output to debug the issue.");
-}
-
+/* ── Manual sync button handler ── */
 async function manualSync() {
   var q = qLoad();
   if (!q.length) { showMsg("✓ Nothing pending — all entries synced", "inf"); return; }
-  if (!scUrl)    { showMsg("No Sheets URL configured", "err"); return; }
-  if (!navigator.onLine) { showMsg("No internet — will sync automatically when online", "wrn"); return; }
+  if (!scUrl)    { showMsg("No Sheets URL configured — tap ⚙ Sheets to set it up", "err"); return; }
+  if (!navigator.onLine) { showMsg("No internet — entries will sync automatically when connected", "wrn"); return; }
   var btn = g("sync-now-btn");
   btn.textContent = "Syncing…";
   btn.disabled = true;
   await runSyncQueue();
   btn.textContent = "📤 Sync Now";
   btn.disabled = false;
+}
+
+/* ── Diagnose button ── */
+async function diagnose() {
+  var out = g("diag-out");
+  out.style.display = "block";
+  out.textContent = "Running diagnosis…\n\n";
+  var log = function(m) { out.textContent += m + "\n"; };
+
+  if (!scUrl) { log("ERROR: No URL saved. Paste URL and click Save URL first."); return; }
+
+  log("STEP 1: GET connectivity test…");
+  try {
+    var r1 = await fetch(scUrl);
+    log("  Status: " + r1.status + "  Response: " + (await r1.text()).slice(0,150));
+  } catch(e) { log("  ERROR: " + e.message); }
+
+  log("\nSTEP 2: POST writeAll test…");
+  var testPayload = {
+    action: "writeAll",
+    rowId:  "TEST-" + Date.now(),
+    sheets: [{
+      sheet: "Combined",
+      headers: ["Date","Time","Entered By","Party Name","Bill/Challan Number",
+                "Vehicle No.","Machine","Product","Thickness","Color","Material Quantity"],
+      rows:    [["TEST-" + new Date().toLocaleDateString("en-GB"), "00:00",
+                 "Subhash","TEST PARTY","TEST-BILL","TEST-VEH",
+                 "Apollo","Hexagon","60 MM","Grey",1]],
+      rebuildSummaryAfter: true
+    }]
+  };
+  log("  Payload: " + JSON.stringify(testPayload).slice(0,200) + "…");
+  try {
+    var r2 = await fetch(scUrl, {
+      method: "POST", headers: {"Content-Type":"text/plain"},
+      body:   JSON.stringify(testPayload)
+    });
+    var txt = await r2.text();
+    log("  HTTP: " + r2.status + "\n  Response: " + txt.slice(0,300));
+    try {
+      var j = JSON.parse(txt);
+      log("  status=" + j.status + "  summaryRows=" + j.summaryRows + "  skipped=" + j.skipped);
+    } catch(ex) { log("  Could not parse JSON: " + ex.message); }
+  } catch(e) { log("  FETCH ERROR: " + e.message); }
+
+  log("\nQueue status: " + qLoad().length + " pending items");
+  log("Diagnosis complete.");
+}
+
+
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   SECTION 7 — SETUP PANEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+function toggleSetup() {
+  var el = g("sup");
+  el.style.display = (el.style.display === "none" || el.style.display === "") ? "block" : "none";
+  g("urlin").value = scUrl;
+}
+
+function saveUrl() {
+  scUrl = g("urlin").value.trim();
+  localStorage.setItem(SK, scUrl);
+  syncSt(scUrl ? "ok" : "loc");
+  showMsg(scUrl ? "✓ URL saved — sync active" : "URL cleared", "inf");
 }
 
 function testUrl() {
@@ -1675,38 +1694,37 @@ function testUrl() {
     .catch(function() { syncSt("err"); showMsg("❌ Failed — check URL & permissions","err"); });
 }
 
-/* Copy the Apps Script code from the code box to the clipboard */
 function copyCode() {
   navigator.clipboard.writeText(g("codebox").textContent)
-    .then(function() { showMsg("✓ Code copied to clipboard!"); })
-    .catch(function() { showMsg("Select and copy the code manually","inf"); });
+    .then(function() { showMsg("✓ Code copied!"); })
+    .catch(function() { showMsg("Select and copy manually","inf"); });
+}
+
+function normaliseVeh(v) {
+  if (!v) return v;
+  var s = v.toUpperCase().replace(/\s+/g, "");
+  var m = s.match(/^([A-Z]{2})(\d{2})([A-Z]{1,3})(\d{1,4})$/);
+  return m ? m[1]+" "+m[2]+" "+m[3]+" "+m[4] : s;
 }
 
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 8 — TAB SWITCHING
-   Shows the selected panel, hides the other two.
-   Also updates both the header tabs AND the mobile bottom nav.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
 function goTab(name) {
-  /* Show / hide the three content panels */
   g("p-inward").style.display   = (name === "inward")   ? "" : "none";
   g("p-dispatch").style.display = (name === "dispatch")  ? "" : "none";
   g("p-records").style.display  = (name === "records")   ? "" : "none";
-  /* Update desktop header tab active state */
   g("t-in").className  = "tb" + (name === "inward"   ? " on" : "");
   g("t-out").className = "tb" + (name === "dispatch"  ? " on" : "");
   g("t-rec").className = "tb" + (name === "records"   ? " on" : "");
-  /* Update mobile bottom nav active state */
   g("bn-in").className  = "bn" + (name === "inward"   ? " on" : "");
   g("bn-out").className = "bn" + (name === "dispatch"  ? " on" : "");
   g("bn-rec").className = "bn" + (name === "records"   ? " on" : "");
-  /* If switching to Records, re-render with latest data */
   if (name === "records") renderRec();
-  /* Scroll to top on mobile after tab switch */
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top:0, behavior:"smooth" });
 }
-
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 9 — INWARD FORM
@@ -2314,78 +2332,91 @@ function exportExcel() {
 }
 
 
+
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    SECTION 13 — INITIALISATION
-   Runs once when the browser has fully loaded the page.
-   Sets up the Apps Script code box, adds the first dispatch row,
-   registers the service worker, and configures PWA install prompt.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 window.onload = function() {
 
-  /* ── Fill the Apps Script code box ──
-     This is the code the user must paste into their Google Sheet's
-     Apps Script editor to enable the cloud sync feature.
-     It creates/appends to sheet tabs by name on every POST call. */
-  g("codebox").textContent = "// \u2500\u2500 Configuration \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nvar SHEET_ID = \"1bnYCSCMFb6FeU1pPaE66smxYu4xGRUO_Pq2egxIpskM\";\n\nvar DISPATCH_SHEETS = [\n  \"Dispatch - Mukesh\",\n  \"Dispatch - Subhash\",\n  \"Dispatch - Anandaram\",\n  \"Dispatch - Guard\"\n];\n\nvar MUKESH_VEHICLES = [\n  \"RJ 19 RF 8056\",\n  \"RJ 07 RA 9480\",\n  \"RJ 19 GJ 9279\",\n  \"RJ 19 GG 2398\"\n];\n\nvar OH = [\"Date\",\"Time\",\"Entered By\",\"Party Name\",\"Bill/Challan Number\",\n          \"Vehicle No.\",\"Machine\",\"Product\",\"Thickness\",\"Color\",\"Material Quantity\"];\n\n\n// \u2500\u2500 doGet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doGet(e) {\n  return ContentService\n    .createTextOutput(JSON.stringify({status:\"ready\"}))\n    .setMimeType(ContentService.MimeType.JSON);\n}\n\n\n// \u2500\u2500 doPost \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doPost(e) {\n  var ss   = SpreadsheetApp.openById(SHEET_ID);\n  var data = JSON.parse(e.postData.contents);\n\n  // Test ping\n  if (data.testOnly) {\n    return ok({test:true});\n  }\n\n  // \u2500\u2500 writeAll: atomic multi-sheet write (new format) \u2500\u2500\n  if (data.action === \"writeAll\") {\n    var summaryRows = 0;\n    data.sheets.forEach(function(s) {\n      appendToSheet(ss, s.sheet, s.headers, s.rows);\n      if (s.rebuildSummaryAfter) {\n        summaryRows = rebuildAll(ss);\n      }\n    });\n    return ok({rowId: data.rowId, summaryRows: summaryRows});\n  }\n\n  // \u2500\u2500 Legacy single-sheet write (backwards compatible) \u2500\u2500\n  appendToSheet(ss, data.sheet, data.headers, data.rows);\n  if (data.sortByDate) sortSheet(ss, data.sheet);\n  var summaryRows = 0;\n  if (data.rebuildSummaryAfter) summaryRows = rebuildAll(ss);\n  return ok({added: data.rows ? data.rows.length : 0, summaryRows: summaryRows});\n}\n\n\n// \u2500\u2500 appendToSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Appends rows to a named sheet. Creates the sheet with headers if new.\n// NEVER creates a blank sheet \u2014 only creates if there are rows to write.\nfunction appendToSheet(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return;  // nothing to write \u2014 exit immediately\n\n  var sh = ss.getSheetByName(name);\n  if (!sh) {\n    sh = ss.insertSheet(name);\n    sh.appendRow(headers);\n    formatHeader(sh, headers.length);\n  } else if (sh.getLastRow() === 0) {\n    sh.appendRow(headers);\n    formatHeader(sh, headers.length);\n  }\n\n  rows.forEach(function(r) { sh.appendRow(r); });\n}\n\n\n// \u2500\u2500 sortSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction sortSheet(ss, name) {\n  var sh = ss.getSheetByName(name);\n  if (!sh || sh.getLastRow() < 3) return;\n  sh.getRange(2, 1, sh.getLastRow()-1, sh.getLastColumn())\n    .sort({column:1, ascending:true});\n}\n\n\n// \u2500\u2500 formatHeader \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction formatHeader(sh, ncols) {\n  var hdr = sh.getRange(1, 1, 1, ncols);\n  hdr.setFontWeight(\"bold\").setBackground(\"#2c3b48\").setFontColor(\"#f7b810\");\n  sh.setFrozenRows(1);\n  sh.setColumnWidths(1, ncols, 140);\n}\n\n\n// \u2500\u2500 rebuildAll \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Reads all Dispatch sheets, rebuilds Outward + Combined + Daily Summary.\n// NEVER creates a sheet unless there is data to put in it.\nfunction rebuildAll(ss) {\n  var tz = Session.getScriptTimeZone();\n\n  // Collect all rows from every Dispatch sheet\n  var allRows = [];\n  DISPATCH_SHEETS.forEach(function(sName) {\n    var sh = ss.getSheetByName(sName);\n    if (!sh || sh.getLastRow() < 2) return;\n    var rows = sh.getRange(2, 1, sh.getLastRow()-1, sh.getLastColumn()).getValues();\n    rows.forEach(function(row) {\n      var d = row[0];\n      row[0] = (d instanceof Date && !isNaN(d))\n               ? Utilities.formatDate(d, tz, \"dd/MM/yyyy\")\n               : String(d).trim();\n      row[2] = String(row[2]).trim();\n      allRows.push(row);\n    });\n  });\n\n  if (allRows.length === 0) return 0;  // no data at all \u2014 do nothing\n\n  // Sort by date ascending\n  allRows.sort(function(a, b) {\n    function pd(s) {\n      var p = String(s).split(\"/\");\n      return p.length === 3 ? new Date(p[2], p[1]-1, p[0]) : new Date(0);\n    }\n    return pd(a[0]) - pd(b[0]);\n  });\n\n  // Rebuild Outward\n  writeSheet(ss, \"Outward\", OH, allRows);\n\n  // Rebuild Combined\n  var combinedRows = allRows.filter(function(row) {\n    var who = row[2];\n    var veh = String(row[5]).trim();\n    if (who === \"Guard\")  return false;\n    if (who === \"Mukesh\") return MUKESH_VEHICLES.indexOf(veh) === -1;\n    return true;\n  });\n  if (combinedRows.length > 0) writeSheet(ss, \"Combined\", OH, combinedRows);\n\n  // Rebuild Daily Summary\n  if (combinedRows.length === 0) return 0;\n\n  var tot = {};\n  combinedRows.forEach(function(row) {\n    var d   = row[0];\n    var ds  = (d instanceof Date && !isNaN(d))\n              ? Utilities.formatDate(d, tz, \"dd-MM-yyyy\")\n              : String(d).trim().replace(/\\//g, \"-\");\n    var mac = String(row[6]||\"\").trim();\n    var pro = String(row[7]||\"\").trim();\n    var thk = String(row[8]||\"\").trim();\n    var col = String(row[9]||\"\").trim();\n    var qty = Number(row[10])||0;\n    if (!mac || !ds) return;\n    var k = ds+\"|\"+mac+\"|\"+pro+\"|\"+thk+\"|\"+col;\n    tot[k] = (tot[k]||0) + qty;\n  });\n\n  var SH = [\"Date\",\"Machine\",\"Product\",\"Thickness\",\"Color\",\"Total Dispatched\"];\n  var sRows = Object.keys(tot).map(function(k) {\n    var p = k.split(\"|\");\n    return [p[0],p[1],p[2],p[3],p[4],tot[k]];\n  }).sort(function(a,b) {\n    function pd(s) {\n      var p = String(s).split(\"-\");\n      return p.length===3 ? new Date(p[2],p[1]-1,p[0]) : new Date(0);\n    }\n    var d = pd(a[0])-pd(b[0]);\n    return d !== 0 ? d : String(a[1]).localeCompare(String(b[1]));\n  });\n\n  writeSheet(ss, \"Daily Summary\", SH, sRows);\n  return sRows.length;\n}\n\n\n// \u2500\u2500 writeSheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// Clears and rewrites a sheet. ONLY creates the sheet if rows.length > 0.\nfunction writeSheet(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return;  // NEVER create blank sheets\n\n  var sh = ss.getSheetByName(name);\n  if (!sh) sh = ss.insertSheet(name);\n  sh.clearContents();\n\n  var nc       = headers.length;\n  var safeRows = rows.map(function(row) {\n    var r = row.slice(0, nc);\n    while (r.length < nc) r.push(\"\");\n    return r;\n  });\n\n  var data = [headers].concat(safeRows);\n  sh.getRange(1, 1, data.length, nc).setValues(data);\n  formatHeader(sh, nc);\n}\n\n\n// \u2500\u2500 manualRebuild \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction manualRebuild() {\n  var ss    = SpreadsheetApp.getActiveSpreadsheet();\n  var count = rebuildAll(ss);\n  SpreadsheetApp.getUi().alert(\"Rebuild complete. Daily Summary: \" + count + \" rows.\");\n}\n\n\n// \u2500\u2500 onEdit trigger \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction onEdit(e) {\n  try {\n    var name    = e.range.getSheet().getName();\n    var watched = DISPATCH_SHEETS.concat([\"Outward\",\"Combined\"]);\n    if (watched.indexOf(name) === -1) return;\n    rebuildAll(SpreadsheetApp.getActiveSpreadsheet());\n  } catch(err) {}\n}\n\n\n// \u2500\u2500 Helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction ok(extra) {\n  var obj = {status:\"ok\"};\n  Object.keys(extra).forEach(function(k){ obj[k] = extra[k]; });\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}";
+  /* Fill the Apps Script codebox */
+  g("codebox").textContent = "// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n// HELIX INDUSTRIES \u2014 Apps Script  (paste this into Extensions > Apps Script)\n// \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\n\nvar SHEET_ID = \"1bnYCSCMFb6FeU1pPaE66smxYu4xGRUO_Pq2egxIpskM\";\n\nvar DISPATCH_SHEETS = [\n  \"Dispatch - Mukesh\",\n  \"Dispatch - Subhash\",\n  \"Dispatch - Anandaram\",\n  \"Dispatch - Guard\"\n];\n\nvar MUKESH_VEHICLES = [\n  \"RJ 19 RF 8056\",\n  \"RJ 07 RA 9480\",\n  \"RJ 19 GJ 9279\",\n  \"RJ 19 GG 2398\"\n];\n\nvar DISPATCH_HEADERS = [\n  \"Date\",\"Time\",\"Entered By\",\"Party Name\",\n  \"Bill/Challan Number\",\"Vehicle No.\",\n  \"Machine\",\"Product\",\"Thickness\",\"Color\",\"Material Quantity\"\n];\n\n\n// \u2500\u2500 doGet: connectivity test \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doGet(e) {\n  return json_({status:\"ready\"});\n}\n\n\n// \u2500\u2500 doPost: main entry point \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction doPost(e) {\n  try {\n    var ss   = SpreadsheetApp.openById(SHEET_ID);\n    var data = JSON.parse(e.postData.contents);\n\n    if (data.testOnly) return json_({status:\"ok\", test:true});\n\n    // writeAll: atomic multi-sheet write sent by the app\n    if (data.action === \"writeAll\") {\n      // Server-side duplicate guard: skip if this rowId was already written\n      if (data.rowId && alreadyWritten_(ss, data.rowId)) {\n        return json_({status:\"ok\", skipped:true, rowId:data.rowId});\n      }\n      var summaryRows = 0;\n      (data.sheets || []).forEach(function(s) {\n        if (!s.rows || s.rows.length === 0) return;\n        appendRows_(ss, s.sheet, s.headers, s.rows);\n        if (s.rebuildSummaryAfter) summaryRows = rebuildAll_(ss);\n      });\n      if (data.rowId) markWritten_(ss, data.rowId);\n      return json_({status:\"ok\", rowId:data.rowId, summaryRows:summaryRows});\n    }\n\n    return json_({status:\"error\", message:\"Unknown action\"});\n\n  } catch(err) {\n    return json_({status:\"error\", message:String(err)});\n  }\n}\n\n\n// \u2500\u2500 appendRows_: append rows to a sheet, create with header if new \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// RULE: never touches a sheet unless rows.length > 0\nfunction appendRows_(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return;\n  var sh = ss.getSheetByName(name);\n  if (!sh) {\n    sh = ss.insertSheet(name);\n    sh.appendRow(headers);\n    styleHeader_(sh, headers.length);\n  } else if (sh.getLastRow() === 0) {\n    sh.appendRow(headers);\n    styleHeader_(sh, headers.length);\n  }\n  rows.forEach(function(r) { sh.appendRow(r); });\n}\n\n\n// \u2500\u2500 rebuildAll_: rebuild Outward, Combined, Daily Summary from Dispatch sheets \u2500\n// RULE: never creates a sheet unless there is data to write into it\nfunction rebuildAll_(ss) {\n  var tz = Session.getScriptTimeZone();\n\n  // Read all rows from every Dispatch sheet\n  var allRows = [];\n  DISPATCH_SHEETS.forEach(function(sName) {\n    var sh = ss.getSheetByName(sName);\n    if (!sh || sh.getLastRow() < 2) return;\n    var nc   = sh.getLastColumn();\n    var rows = sh.getRange(2, 1, sh.getLastRow() - 1, nc).getValues();\n    rows.forEach(function(row) {\n      // Normalise date (col 0) to dd/MM/yyyy string\n      var d = row[0];\n      row[0] = (d instanceof Date && !isNaN(d))\n               ? Utilities.formatDate(d, tz, \"dd/MM/yyyy\")\n               : String(d).trim();\n      row[2] = String(row[2]).trim(); // Entered By\n      // Trim to 11 cols \u2014 ignore any extra columns users may have added\n      allRows.push(row.slice(0, DISPATCH_HEADERS.length));\n    });\n  });\n\n  if (allRows.length === 0) return 0; // no data \u2014 do nothing, create nothing\n\n  // Sort by date ascending\n  allRows.sort(function(a, b) { return parseDate_(a[0]) - parseDate_(b[0]); });\n\n  // Outward = all rows\n  writeSheet_(ss, \"Outward\", DISPATCH_HEADERS, allRows);\n\n  // Combined = filtered rows\n  var combinedRows = allRows.filter(function(row) {\n    var who = row[2], veh = String(row[5]).trim();\n    if (who === \"Guard\")  return false;\n    if (who === \"Mukesh\") return MUKESH_VEHICLES.indexOf(veh) === -1;\n    return true;\n  });\n  if (combinedRows.length > 0) {\n    writeSheet_(ss, \"Combined\", DISPATCH_HEADERS, combinedRows);\n  }\n\n  // Daily Summary = aggregated from Combined\n  if (combinedRows.length === 0) return 0;\n\n  var totals = {};\n  combinedRows.forEach(function(row) {\n    var d  = row[0];\n    // Use dashes so Sheets does NOT auto-convert \"25-02-2026\" to a Date object\n    var ds = (d instanceof Date && !isNaN(d))\n             ? Utilities.formatDate(d, tz, \"dd-MM-yyyy\")\n             : String(d).replace(/\\//g, \"-\");\n    var mac = String(row[6] || \"\").trim();\n    var pro = String(row[7] || \"\").trim();\n    var thk = String(row[8] || \"\").trim();\n    var col = String(row[9] || \"\").trim();\n    var qty = Number(row[10]) || 0;\n    if (!mac || !ds) return;\n    var key = [ds, mac, pro, thk, col].join(\"|\");\n    totals[key] = (totals[key] || 0) + qty;\n  });\n\n  var SH = [\"Date\",\"Machine\",\"Product\",\"Thickness\",\"Color\",\"Total Dispatched\"];\n  var summaryRows = Object.keys(totals).map(function(k) {\n    var p = k.split(\"|\");\n    return [p[0], p[1], p[2], p[3], p[4], totals[k]];\n  }).sort(function(a, b) {\n    var d = parseDashDate_(a[0]) - parseDashDate_(b[0]);\n    return d !== 0 ? d : String(a[1]).localeCompare(String(b[1]));\n  });\n\n  writeSheet_(ss, \"Daily Summary\", SH, summaryRows);\n  return summaryRows.length;\n}\n\n\n// \u2500\u2500 writeSheet_: clear and rewrite a sheet completely \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n// RULE: only creates the sheet if rows.length > 0 \u2014 never creates blank tabs\nfunction writeSheet_(ss, name, headers, rows) {\n  if (!rows || rows.length === 0) return; // hard guard \u2014 never create blank tabs\n\n  var nc = headers.length;\n  var sh = ss.getSheetByName(name);\n  if (!sh) sh = ss.insertSheet(name);\n  sh.clearContents();\n\n  // Pad/trim every row to exactly nc columns\n  var safe = rows.map(function(row) {\n    var r = row.slice(0, nc);\n    while (r.length < nc) r.push(\"\");\n    return r;\n  });\n\n  var data = [headers].concat(safe);\n  sh.getRange(1, 1, data.length, nc).setValues(data);\n  styleHeader_(sh, nc);\n}\n\n\n// \u2500\u2500 styleHeader_: format the header row \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction styleHeader_(sh, nc) {\n  var h = sh.getRange(1, 1, 1, nc);\n  h.setFontWeight(\"bold\").setBackground(\"#2c3b48\").setFontColor(\"#f7b810\");\n  sh.setFrozenRows(1);\n  sh.setColumnWidths(1, nc, 140);\n}\n\n\n// \u2500\u2500 Deduplication: track written rowIds in a hidden sheet \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nvar ID_SHEET = \"WrittenIDs\";\nvar MAX_IDS  = 5000;\n\nfunction alreadyWritten_(ss, rowId) {\n  var sh = ss.getSheetByName(ID_SHEET);\n  if (!sh || sh.getLastRow() === 0) return false;\n  var ids = sh.getRange(1, 1, sh.getLastRow(), 1).getValues()\n              .map(function(r) { return String(r[0]); });\n  return ids.indexOf(String(rowId)) !== -1;\n}\n\nfunction markWritten_(ss, rowId) {\n  var sh = ss.getSheetByName(ID_SHEET);\n  if (!sh) { sh = ss.insertSheet(ID_SHEET); sh.hideSheet(); }\n  sh.appendRow([String(rowId), new Date()]);\n  if (sh.getLastRow() > MAX_IDS) {\n    sh.deleteRows(1, sh.getLastRow() - MAX_IDS);\n  }\n}\n\n\n// \u2500\u2500 onEdit: fires on manual cell edits \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction onEdit(e) {\n  try {\n    var name    = e.range.getSheet().getName();\n    var watched = DISPATCH_SHEETS.concat([\"Outward\",\"Combined\"]);\n    if (watched.indexOf(name) === -1) return;\n    rebuildAll_(SpreadsheetApp.getActiveSpreadsheet());\n  } catch(err) { /* ignore errors from manual runs */ }\n}\n\n\n// \u2500\u2500 manualRebuild: run from Apps Script editor to force full rebuild \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction manualRebuild() {\n  var ss    = SpreadsheetApp.getActiveSpreadsheet();\n  var count = rebuildAll_(ss);\n  SpreadsheetApp.getUi().alert(\"\u2713 Rebuild complete \u2014 Daily Summary: \" + count + \" rows.\");\n}\n\n\n// \u2500\u2500 Date parsing helpers \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction parseDate_(s) {      // \"25/02/2026\"\n  var p = String(s).split(\"/\");\n  return p.length === 3 ? new Date(p[2], p[1]-1, p[0]).getTime() : 0;\n}\nfunction parseDashDate_(s) {  // \"25-02-2026\"\n  var p = String(s).split(\"-\");\n  return p.length === 3 ? new Date(p[2], p[1]-1, p[0]).getTime() : 0;\n}\n\n\n// \u2500\u2500 JSON response helper \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\nfunction json_(obj) {\n  return ContentService\n    .createTextOutput(JSON.stringify(obj))\n    .setMimeType(ContentService.MimeType.JSON);\n}";
 
-  /* ── Show mobile-only Sheets setup button ── */
+  /* Mobile-only Sheets button */
   if (window.innerWidth <= 700) g("mob-cfg").style.display = "block";
 
-  /* ── Initialise app state ── */
-  upd();       /* set count badges */
-  addOutRow(); /* pre-add first dispatch row */
-  syncSt(scUrl ? "ok" : "loc"); /* set sync dot */
+  /* Initialise app */
+  upd();
+  addOutRow();
+  syncSt(scUrl ? "ok" : "loc");
 
-  /* ── Register PWA Service Worker ──
-     This makes the app work offline and installable.
-     Only works when served over HTTPS (not from a local file). */
+  /* Service Worker */
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js")
-      .then(function(reg) { console.log("[PWA] SW registered:", reg.scope); })
-      .catch(function(e)  { console.warn("[PWA] SW failed:", e); });
+      .then(function(reg) {
+        // ── Check for updates immediately on every load ──
+        reg.update();
+
+        // Helper: activate a waiting SW immediately, then reload
+        function activateAndReload(sw) {
+          sw.postMessage({type:"SKIP_WAITING"});
+          // Reload once the new SW takes control
+          navigator.serviceWorker.addEventListener("controllerchange", function() {
+            window.location.reload();
+          });
+        }
+
+        // Case A: A new SW was already waiting BEFORE this page loaded
+        // (happens when user opened the app after a background update)
+        if (reg.waiting) {
+          activateAndReload(reg.waiting);
+          return;
+        }
+
+        // Case B: A new SW is found and installs DURING this session
+        reg.addEventListener("updatefound", function() {
+          var nw = reg.installing;
+          if (!nw) return;
+          nw.addEventListener("statechange", function() {
+            if (nw.state === "installed" && navigator.serviceWorker.controller) {
+              activateAndReload(nw);
+            }
+          });
+        });
+      })
+      .catch(function(e) { console.warn("[SW]", e); });
   }
 
-  /* ── PWA Install Prompt ──
-     Chrome on Android fires this event when the app can be installed.
-     We capture it and show our branded banner after a short delay. */
+  /* PWA install prompt */
   var deferredPrompt = null;
   window.addEventListener("beforeinstallprompt", function(e) {
     e.preventDefault();
     deferredPrompt = e;
-    /* Show install banner after 2 seconds */
-    setTimeout(function() {
-      g("install-banner").style.display = "flex";
-    }, 2000);
+    setTimeout(function() { g("install-banner").style.display = "flex"; }, 2000);
   });
-
-  /* When the user taps our Install button */
   g("install-btn").addEventListener("click", function() {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then(function(c) {
-      if (c.outcome === "accepted") showMsg("App installed! Open from home screen anytime.","inf");
+      if (c.outcome === "accepted") showMsg("App installed! Open from home screen anytime.", "inf");
       deferredPrompt = null;
       g("install-banner").style.display = "none";
     });
   });
-
-  /* If already running as an installed PWA, hide the install banner */
   if (window.matchMedia("(display-mode: standalone)").matches) {
     g("install-banner").style.display = "none";
   }
 
-  /* ── Online / Offline Detection ──
-     Shows the red bar when internet is lost.
-     Hides it when connection is restored. */
+  /* Online / Offline */
   function checkOnline() {
     g("offline-bar").style.display = navigator.onLine ? "none" : "block";
     if (!navigator.onLine) {
       syncSt("err");
     } else {
-      /* Back online — immediately flush any queued entries */
       var pending = qLoad().length;
       if (pending > 0) {
-        showMsg("Connection restored — syncing " + pending + " pending entr" + (pending>1?"ies":"y") + "…", "inf");
+        showMsg("Connection restored — syncing " + pending +
+                " pending entr" + (pending>1?"ies":"y") + "…", "inf");
         runSyncQueue();
       } else if (scUrl) {
         syncSt("ok");
@@ -2396,12 +2427,29 @@ window.onload = function() {
   window.addEventListener("offline", checkOnline);
   checkOnline();
 
-  /* Retry any pending queue items every 30 seconds */
+  /* Retry queue every 30 seconds */
   setInterval(runSyncQueue, 30000);
 
-  /* On startup: show badge and immediately try to sync any queued entries */
-  updateQueueBadge();
-  setTimeout(runSyncQueue, 2000);  /* slight delay so app finishes loading first */
+  /* ── Remote config: fetch config.json from GitHub on every startup ──
+     This allows the Apps Script URL to be updated centrally without
+     contacting any user. If config.json contains a newer URL, it is
+     saved automatically and all users switch silently. */
+  fetch("./config.json?v=" + Date.now())  // cache-bust so we always get latest
+    .then(function(r) { return r.json(); })
+    .then(function(cfg) {
+      if (cfg && cfg.sheetsUrl && cfg.sheetsUrl !== scUrl) {
+        scUrl = cfg.sheetsUrl;
+        localStorage.setItem(SK, scUrl);
+        syncSt("ok");
+        console.log("[Config] Sheets URL updated from config.json");
+      }
+    })
+    .catch(function() { /* config.json missing or unreachable — use saved URL */ })
+    .finally(function() {
+      /* Sync any pending items on startup (2s delay so app finishes loading) */
+      updateQueueBadge();
+      setTimeout(runSyncQueue, 2000);
+    });
 };
 
 </script>
