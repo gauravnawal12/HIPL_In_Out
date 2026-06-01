@@ -1101,7 +1101,7 @@ tr:hover td { background: rgba(247,184,16,.04); }
           <!-- Which customer or construction site is receiving the material -->
           <div>
             <label class="lbl">Party / Site Name *</label>
-            <input class="inp" id="out-party" placeholder="Party or site name"/>
+            <input class="inp" id="out-party" placeholder="Party or site name" oninput="this.value=this.value.toUpperCase()"/>
           </div>
 
           <!-- Invoice or delivery note number -->
@@ -2018,7 +2018,7 @@ function refreshOut() {
 async function submitOut() {
   /* Validate header fields */
   var who   = g("out-who").value;
-  var party = g("out-party").value.trim();
+  var party = g("out-party").value.trim().toUpperCase();
   var bill  = g("out-bill").value.trim();
   var vs    = g("out-veh").value;
   var vc    = g("out-veh-c").value.trim();
