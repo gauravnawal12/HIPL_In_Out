@@ -1251,12 +1251,14 @@ tr:hover td { background: rgba(247,184,16,.04); }
    Used to filter the vehicle dropdown after a supplier is selected. */
 var SV = {
   "ओम विष्णु (Om Vishnu - Bajri)":         ["RJ 28 GA 4903","3837","4455"],
-  "एन.डी. स्टोन (N.D. Stone - Gitti)":     ["RJ 19 GF 7363","RJ 19 GF 7365","RJ 19 GF 7354"],
+  "एन.डी. स्टोन (N.D. Stone - Gitti)":     ["RJ 19 GF 7363","RJ 19 GF 7365","RJ 19 GF 7354","RJ 19 GF 7353"],
   "अलंकार उद्योग (Alankar Udyog - Gitti)": ["5770","1044","3359","8384","6524","5535","3949"],
   "चैलाराम जी (Chelaram Ji - Gitti)":      ["RJ 19 GD 4474"],
   "महादेव स्टोन (Mahadev Stone - Gitti)":  ["RJ 19 GJ 5297"],
   "अल्ट्राटेक (Ultratech - Cement)":       [],
-  "धायल (Dhayal - Water Tanker)":          ["RJ 19 GJ 0320","RJ 19 GD 5152"]
+  "धायल (Dhayal - Water Tanker)":          ["RJ 19 GJ 0320","RJ 19 GD 5152"],
+  "Om Ji":          ["MP 04 HE 3552","MP 04 HE 3554","RJ 19 GK 2888"],
+  "Shri Hari Ishwar Das Transport Co.":   [] 
 };
 
 /* Which materials each INWARD supplier delivers.
@@ -1268,7 +1270,9 @@ var SM = {
   "चैलाराम जी (Chelaram Ji - Gitti)":      ["Dust","Mix Dust","6 mm","10 mm","20 mm"],
   "महादेव स्टोन (Mahadev Stone - Gitti)":  ["Dust","Mix Dust","6 mm","10 mm","20 mm"],
   "अल्ट्राटेक (Ultratech - Cement)":       ["Cement Bag","Cement Bulker"],
-  "धायल (Dhayal - Water Tanker)":          ["10 Chakka Tanker","6 Chakka Tanker"]
+  "धायल (Dhayal - Water Tanker)":          ["10 Chakka Tanker","6 Chakka Tanker"],
+  "Om Ji":         ["Sand"],
+  "Shri Hari Ishwar Das Transport Co.":   ["Flyash"] 
 };
 
 /* English-only name for each supplier — stored in records & Excel (not Hindi) */
@@ -1279,7 +1283,9 @@ var SE = {
   "चैलाराम जी (Chelaram Ji - Gitti)":      "Chelaram Ji",
   "महादेव स्टोन (Mahadev Stone - Gitti)":  "Mahadev Stone",
   "अल्ट्राटेक (Ultratech - Cement)":       "Ultratech",
-  "धायल (Dhayal - Water Tanker)":          "Dhayal"
+  "धायल (Dhayal - Water Tanker)":          "Dhayal",
+  "Om Ji":         "Om Ji",
+  "Shri Hari Ishwar Das Transport Co.":   ""Shri Hari Ishwar Das Transport Co."
 };
 
 /* DISPATCH: Which designs are available for each dispatch type.
@@ -1291,7 +1297,7 @@ var SE = {
 var DD = {
   "Apollo": [
     "Hexagon","8x8 Quad","8x4",
-    "Kerbstone Round","Kerbstone Chamfered","Kerbstone Bullnose"
+    "Kerbstone Round","Kerbstone Chamfered","Kerbstone Bullnose","Zigzag"
   ],
   "Parijatha PBM+": [
     "Hexagon","Zigzag","I-Shape","8x4","Tricon","S-Paver"
